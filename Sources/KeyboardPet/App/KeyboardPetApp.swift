@@ -4,43 +4,38 @@ import AppKit
 @main
 struct KeyboardPetApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @ObservedObject private var controller = PetController.shared
 
     var body: some Scene {
-        // The pet window is managed imperatively by the AppDelegate (AppKit).
-        // The menu bar entry (MenuBarExtra) is added in M4.
+        // Menu bar entry with a live status summary.
+        MenuBarExtra {
+            MenuBarContent()
+                .environmentObject(controller)
+        } label: {
+            Text(controller.state.emoji)
+        }
+
         Settings {
             EmptyView()
         }
     }
 }
 
-/// Owns the long-lived controller and the floating pet window.
+/// Owns the floating pet window. State lives in `PetController.shared`.
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
-    let controller = PetController()
     private var petWindowController: PetWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Menu-bar-style agent: no Dock icon.
         NSApp.setActivationPolicy(.accessory)
-        installAppMenu()
 
+        let controller = PetController.shared
         let root = AnyView(PetView().environmentObject(controller))
         let windowController = PetWindowController(rootView: root)
         windowController.show()
         petWindowController = windowController
 
         controller.start()
-    }
-
-    /// Minimal main menu so standard shortcuts (Cmd-Q) work even as an accessory.
-    private func installAppMenu() {
-        let mainMenu = NSMenu()
-        let appItem = NSMenuItem()
-        mainMenu.addItem(appItem)
-        let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "退出 KeyboardPet", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        appItem.submenu = appMenu
-        NSApp.mainMenu = mainMenu
     }
 }

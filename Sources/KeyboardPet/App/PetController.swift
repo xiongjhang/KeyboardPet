@@ -5,6 +5,9 @@ import Combine
 /// machine, and publishing observable state for the UI.
 final class PetController: ObservableObject {
 
+    /// Shared instance, observed by both the pet window and the menu bar.
+    static let shared = PetController()
+
     let monitor = KeyboardMonitor()
     let metrics: MetricsEngine
     let stateMachine = PetStateMachine()
@@ -23,7 +26,8 @@ final class PetController: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
-        metrics = MetricsEngine()
+        // Restore lifetime peak so the celebration only fires on genuine records.
+        metrics = MetricsEngine(initialPeakWPM: UserDefaults.standard.peakWPM)
 
         monitor.onKeyEvent = { [weak self] event in
             self?.metrics.ingest(event)
@@ -41,6 +45,9 @@ final class PetController: ObservableObject {
             .sink { [weak self] m in
                 guard let self else { return }
                 self.snapshot = m
+                if m.peakWPM > UserDefaults.standard.peakWPM {
+                    UserDefaults.standard.peakWPM = m.peakWPM
+                }
                 let now = Date()
                 self.isNight = PetStateMachine.isNight(now)
                 let next = self.stateMachine.evaluate(m, now: now)
