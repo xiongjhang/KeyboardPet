@@ -23,16 +23,18 @@ struct ClawdSpriteView: View {
                     if state == .record { ClawdEffects.drawFireworks(size: size, t: t, ctx: &ctx) }
                 }
 
-                sprite(for: state, t: t)
+                // The nightcap is baked into the night sprite variants, so it
+                // shares the crab's pixel grid and moves with the body.
+                sprite(for: state, t: t, isNight: controller.isNight)
                     .interpolation(.none)
                     .resizable()
                     .frame(width: spriteSize, height: spriteSize)
                     .scaleEffect(state == .idle ? PetTheme.breathing(t) : 1.0)
                     .offset(y: bobOffset(state: state, t: t, age: age))
 
-                // In-front effects / bubbles.
+                // In-front ambient bubbles / readout (do not bob with the body).
                 Canvas { ctx, size in
-                    ClawdEffects.draw(state: state, isNight: controller.isNight,
+                    ClawdEffects.draw(state: state,
                                       permissionGranted: controller.permissionGranted,
                                       t: t, ctx: &ctx, size: size)
                     // Live pixel-art WPM readout while actively typing.
@@ -48,8 +50,8 @@ struct ClawdSpriteView: View {
     }
 
     /// Picks the current animation frame for a state.
-    private func sprite(for state: PetState, t: TimeInterval) -> Image {
-        let frames = ClawdSprites.frames(for: state)
+    private func sprite(for state: PetState, t: TimeInterval, isNight: Bool) -> Image {
+        let frames = ClawdSprites.frames(for: state, isNight: isNight)
         guard !frames.isEmpty else { return Image(systemName: "questionmark") }
         let idx = Int(t * state.spriteFPS) % frames.count
         return Image(nsImage: frames[idx])
@@ -82,7 +84,7 @@ enum ClawdEffects {
     private static let center = CGPoint(x: 100, y: 104)
     private static let headTop: CGFloat = 58
 
-    static func draw(state: PetState, isNight: Bool, permissionGranted: Bool,
+    static func draw(state: PetState, permissionGranted: Bool,
                      t: TimeInterval, ctx: inout GraphicsContext, size: CGSize) {
         switch state {
         case .deleting:
@@ -111,7 +113,8 @@ enum ClawdEffects {
             break
         }
 
-        if isNight { drawNightcap(ctx: &ctx) }
+        // Note: the nightcap is baked into the night sprite variants (see
+        // `Tools/GenerateClawdSprites.swift`), not drawn here.
         if !permissionGranted { drawPermissionHint(size: size, ctx: &ctx) }
     }
 
@@ -194,22 +197,6 @@ enum ClawdEffects {
                    size: 12 + CGFloat(twinkle) * 8,
                    color: .yellow.opacity(0.6 + twinkle * 0.4), ctx: &ctx)
         }
-    }
-
-    /// A small nightcap perched on the shell while it's late.
-    private static func drawNightcap(ctx: inout GraphicsContext) {
-        var cap = Path()
-        cap.move(to: CGPoint(x: center.x - 30, y: headTop + 4))
-        cap.addQuadCurve(to: CGPoint(x: center.x + 26, y: headTop - 2),
-                         control: CGPoint(x: center.x - 2, y: headTop - 26))
-        cap.addQuadCurve(to: CGPoint(x: center.x + 46, y: headTop - 30),
-                         control: CGPoint(x: center.x + 44, y: headTop - 12))
-        cap.closeSubpath()
-        ctx.fill(cap, with: .color(Color(red: 0.55, green: 0.4, blue: 0.78)))
-        ctx.stroke(cap, with: .color(PetTheme.outlineColor), lineWidth: 2.5)
-        let pom = Path(ellipseIn: CGRect(x: center.x + 40, y: headTop - 38, width: 14, height: 14))
-        ctx.fill(pom, with: .color(.white))
-        ctx.stroke(pom, with: .color(PetTheme.outlineColor), lineWidth: 2)
     }
 
     private static func bubble(_ s: String, at p: CGPoint, size: CGFloat, color: Color,

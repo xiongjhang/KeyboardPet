@@ -35,6 +35,13 @@ let pupil      = rgb(0x2A, 0x1A, 0x14)
 let legDark    = rgb(0x9A, 0x33, 0x22)
 let blush      = rgb(0xFF, 0x9A, 0x9A, 0.6)
 
+// Nightcap palette
+let capMain  = rgb(0x8C, 0x6F, 0xCC)
+let capDark  = rgb(0x5E, 0x47, 0x95)
+let capWhite = rgb(0xFF, 0xFF, 0xFF)
+let capRed   = rgb(0xE5, 0x3E, 0x35)
+let capLine  = rgb(0x2A, 0x1A, 0x14)
+
 func newContext() -> CGContext {
     let cs = CGColorSpaceCreateDeviceRGB()
     let ctx = CGContext(
@@ -148,12 +155,46 @@ func drawMouth(_ ctx: CGContext, face: Face) {
     }
 }
 
+/// A sleeping cap baked into the sprite at the crab's own pixel resolution, so
+/// the pixel grid / outline / palette all match. Drawn BEFORE the face so the
+/// stalked eyes poke out in front of the brim, and inside the shared `bob`
+/// translate so it moves with the body. y points UP.
+func drawNightcap(_ ctx: CGContext) {
+    // Cone: rows from the brim up to the tip, leaning slightly right.
+    let baseY = 49, tipY = 62
+    for y in baseY...tipY {
+        let t = Double(y - baseY) / Double(tipY - baseY)   // 0 (base) .. 1 (tip)
+        let left = Int(22 + t * 14)
+        let right = Int(46 - t * 1)
+        guard right > left else { continue }
+        rect(ctx, left, y, right - left, 1, capMain)
+        rect(ctx, left, y, 1, 1, capDark)        // left edge shade
+        rect(ctx, right - 1, y, 1, 1, capDark)   // right edge shade
+    }
+    // Fluffy white brim resting on the head, outlined top and bottom.
+    rect(ctx, 16, 43, 32, 1, capLine)
+    rect(ctx, 16, 44, 32, 5, capWhite)
+    rect(ctx, 16, 49, 32, 1, capLine)
+    // Pom-pom at the tip.
+    ellipse(ctx, 37, 57, 9, 9, capLine)
+    ellipse(ctx, 38, 58, 7, 7, capWhite)
+    // Red bauble dangling from the right of the brim.
+    rect(ctx, 49, 43, 1, 3, capLine)
+    ellipse(ctx, 47, 36, 6, 7, capRed)
+    rect(ctx, 49, 39, 1, 1, capWhite)            // little highlight
+}
+
 /// The full crab. `frame` toggles a 1px body bob for liveliness.
-func drawCrab(face: Face, claw: ClawPose, frame: Int, sleeping: Bool = false) -> CGImage {
+func drawCrab(face: Face, claw: ClawPose, frame: Int, sleeping: Bool = false,
+              night: Bool = false) -> CGImage {
     let ctx = newContext()
     let bob = frame % 2 == 0 ? 0 : 1
+    // At night the body sits a touch lower so the cap has clean headroom above
+    // the tall stalked eyes. The cap (drawn afterwards) only gets the bob.
+    let drop = night ? 10 : 0
 
-    ctx.translateBy(x: 0, y: CGFloat(bob))
+    ctx.saveGState()
+    ctx.translateBy(x: 0, y: CGFloat(bob - drop))
 
     drawLegs(ctx)
 
@@ -204,6 +245,15 @@ func drawCrab(face: Face, claw: ClawPose, frame: Int, sleeping: Bool = false) ->
         drawEye(ctx, cx: 38, face: face, look: look)
         drawMouth(ctx, face: face)
     }
+    ctx.restoreGState()
+
+    // Cap drawn on top, in the head's freed-up space (bob only, no drop).
+    if night {
+        ctx.saveGState()
+        ctx.translateBy(x: 0, y: CGFloat(bob))
+        drawNightcap(ctx)
+        ctx.restoreGState()
+    }
 
     return ctx.makeImage()!
 }
@@ -237,8 +287,10 @@ let frames: [String: [(Face, ClawPose, Bool)]] = [
 for (state, list) in frames {
     for (i, spec) in list.enumerated() {
         let img = drawCrab(face: spec.0, claw: spec.1, frame: i, sleeping: spec.2)
-        let url = outDir.appendingPathComponent("\(state)_\(i).png")
-        write(img, to: url)
+        write(img, to: outDir.appendingPathComponent("\(state)_\(i).png"))
+        // Night overlay variant (same pose, with the cap baked on).
+        let night = drawCrab(face: spec.0, claw: spec.1, frame: i, sleeping: spec.2, night: true)
+        write(night, to: outDir.appendingPathComponent("night_\(state)_\(i).png"))
     }
 }
 

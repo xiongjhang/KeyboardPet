@@ -16,8 +16,19 @@ enum ClawdSprites {
         return result
     }()
 
-    /// Frames for a state, falling back to `idle` if a state has none.
-    static func frames(for state: PetState) -> [NSImage] {
+    /// Night variants (crab wearing the baked-in pixel nightcap), keyed by state.
+    private static let nightCache: [PetState: [NSImage]] = {
+        var result: [PetState: [NSImage]] = [:]
+        for state in PetState.allCases {
+            result[state] = loadFrames(for: "night_\(state.spriteName)")
+        }
+        return result
+    }()
+
+    /// Frames for a state. When `isNight`, prefer the nightcap variant; falls
+    /// back to the day frames, then to `idle`, if assets are missing.
+    static func frames(for state: PetState, isNight: Bool = false) -> [NSImage] {
+        if isNight, let night = nightCache[state], !night.isEmpty { return night }
         let f = cache[state] ?? []
         return f.isEmpty ? (cache[.idle] ?? []) : f
     }
