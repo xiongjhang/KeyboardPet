@@ -9,7 +9,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "KeyboardPet",
-            path: "Sources/KeyboardPet"
+            path: "Sources/KeyboardPet",
+            resources: [
+                .copy("Resources/Sprites")
+            ]
         )
     ]
 )

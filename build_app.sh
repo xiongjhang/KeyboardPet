@@ -27,6 +27,13 @@ mkdir -p "${MACOS_DIR}" "${RES_DIR}"
 cp "${BIN_PATH}" "${MACOS_DIR}/${APP_NAME}"
 cp "Resources/Info.plist" "${APP_DIR}/Contents/Info.plist"
 
+# Copy SwiftPM resource bundles (sprite assets) next to the binary so
+# `Bundle.module` resolves them at runtime.
+BIN_DIR="$(swift build -c "${CONFIG}" --show-bin-path)"
+for bundle in "${BIN_DIR}"/*.bundle; do
+    [ -e "${bundle}" ] && cp -R "${bundle}" "${MACOS_DIR}/"
+done
+
 # Ad-hoc sign so the Accessibility grant sticks for this build.
 echo "▶︎ Code signing (ad-hoc)…"
 codesign --force --sign - "${APP_DIR}" >/dev/null 2>&1 || true
