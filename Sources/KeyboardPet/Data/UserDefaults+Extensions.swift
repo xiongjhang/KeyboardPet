@@ -11,6 +11,7 @@ extension UserDefaults {
         static let peakWPM = "stats.peakWPM"
         static let level = "xp.level"
         static let totalXP = "xp.total"
+        static let wpmUnitsFixed = "stats.wpmUnitsFixed"
     }
 
     /// Last persisted pet-window origin, or nil if never moved.
@@ -44,5 +45,14 @@ extension UserDefaults {
     var totalXP: Int {
         get { integer(forKey: Keys.totalXP) }
         set { set(newValue, forKey: Keys.totalXP) }
+    }
+
+    /// One-time migration: earlier builds stored `peakWPM` as keystrokes/min,
+    /// which is ~5× the real WPM now reported. Rescale the saved record once so
+    /// new (correct) values can still beat it and the stats panel isn't stale.
+    func migrateWPMUnitsIfNeeded() {
+        guard !bool(forKey: Keys.wpmUnitsFixed) else { return }
+        peakWPM = Int((Double(peakWPM) / 5.0).rounded())
+        set(true, forKey: Keys.wpmUnitsFixed)
     }
 }

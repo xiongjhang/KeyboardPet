@@ -23,14 +23,17 @@ final class MetricsEngine: ObservableObject {
 
     // MARK: Tuning
 
-    /// Sliding window used to estimate WPM (keystrokes/min).
+    /// Sliding window used to estimate WPM.
     private let wpmWindow: TimeInterval = 10
+    /// Standard typing-test convention: one "word" == 5 characters/keystrokes.
+    /// This matches EdClub / TypeRacer / Monkeytype, so the number is comparable.
+    private let charsPerWord = 5.0
     /// Window over which the delete ratio is measured.
     private let deleteWindow: TimeInterval = 20
     /// Idle gap that ends a continuous-coding session.
     private let sessionGap: TimeInterval = 60
-    /// WPM threshold considered "flow".
-    private let flowThreshold = 80
+    /// WPM threshold considered "flow" (real WPM, i.e. post 5-char normalisation).
+    private let flowThreshold = 60
 
     // MARK: State
 
@@ -92,8 +95,10 @@ final class MetricsEngine: ObservableObject {
         keystrokeTimes.removeAll { now.timeIntervalSince($0) > wpmWindow }
         recentEvents.removeAll { now.timeIntervalSince($0.date) > deleteWindow }
 
-        // WPM: keystrokes in window extrapolated to per-minute.
-        let wpm = Int((Double(keystrokeTimes.count) * (60.0 / wpmWindow)).rounded())
+        // WPM: keystrokes in window → chars-per-minute → words-per-minute
+        // (standard 5-chars-per-word normalisation).
+        let charsPerMinute = Double(keystrokeTimes.count) * (60.0 / wpmWindow)
+        let wpm = Int((charsPerMinute / charsPerWord).rounded())
         metrics.wpm = wpm
 
         // Delete rate over the recent window.

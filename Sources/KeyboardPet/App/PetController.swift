@@ -33,6 +33,8 @@ final class PetController: ObservableObject {
     private var flushTimer: Timer?
 
     init() {
+        // Rescale any legacy (keystrokes/min) peak before reading it back.
+        UserDefaults.standard.migrateWPMUnitsIfNeeded()
         // Restore lifetime peak so the celebration only fires on genuine records.
         metrics = MetricsEngine(initialPeakWPM: UserDefaults.standard.peakWPM)
 
