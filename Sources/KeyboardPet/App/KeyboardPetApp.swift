@@ -15,6 +15,12 @@ struct KeyboardPetApp: App {
             Text(controller.state.emoji)
         }
 
+        Window("KeyboardPet 统计", id: "stats") {
+            StatsPanel()
+                .environmentObject(controller)
+        }
+        .windowResizability(.contentSize)
+
         Settings {
             EmptyView()
         }
@@ -37,5 +43,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         petWindowController = windowController
 
         controller.start()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Persist any buffered keystrokes / XP before exiting.
+        PetController.shared.flush()
     }
 }

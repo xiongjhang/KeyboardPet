@@ -39,7 +39,16 @@ the app identity each build).
 
 - The pet floats above other windows in the bottom-right corner.
 - **Drag** it anywhere — its position is remembered.
-- Quit via the menu bar icon (added in M4) or **Cmd-Q**.
+- The **menu bar icon** (current-state emoji) shows a live summary: level/XP,
+  today's keystrokes, current & peak WPM. From there you can open the **stats
+  panel** (today's totals + hourly activity heatmap) or quit.
+
+### Pet states
+
+The pet reacts to your typing in real time: `idle` → `typing` → `flow`
+(WPM > 80 sustained), `deleting` (lots of backspaces), `thinking` / `sleepy` /
+`sleeping` as you go idle, a `wakeup` startle when you resume, a `record`
+celebration on a new peak WPM, and a nightcap overlay during 00:00–05:00.
 
 ## Development (SwiftPM)
 

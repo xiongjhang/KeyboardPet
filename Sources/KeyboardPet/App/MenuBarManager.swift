@@ -4,11 +4,14 @@ import AppKit
 /// Content of the menu-bar dropdown: a live status summary + quick actions.
 struct MenuBarContent: View {
     @EnvironmentObject var controller: PetController
+    @ObservedObject private var experience = ExperienceManager.shared
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         let m = controller.snapshot
 
         Text("KeyboardPet \(controller.state.emoji) \(controller.state.displayName)")
+        Text("Lv.\(experience.level) · 还需 \(experience.xpToNextLevel) XP 升级")
 
         Divider()
 
@@ -20,6 +23,12 @@ struct MenuBarContent: View {
         }
 
         Divider()
+
+        Button("打开统计面板…") {
+            NSApp.activate(ignoringOtherApps: true)
+            openWindow(id: "stats")
+        }
+        .keyboardShortcut("s")
 
         if !controller.permissionGranted {
             Button("⚠️ 打开辅助功能设置…") { openAccessibilitySettings() }

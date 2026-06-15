@@ -11,6 +11,7 @@ final class PetController: ObservableObject {
     let monitor = KeyboardMonitor()
     let metrics: MetricsEngine
     let stateMachine = PetStateMachine()
+    let experience = ExperienceManager.shared
 
     /// Current primary pet state (drives rendering).
     @Published private(set) var state: PetState = .idle
@@ -25,12 +26,18 @@ final class PetController: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
+    /// Buffered per-(day,hour) keystroke counts, flushed to `StatsStore` in batches.
+    private var pendingBuckets: [String: (day: String, hour: Int, count: Int)] = [:]
+    private var pendingXP = 0
+    private var currentDay = StatsStore.dayString()
+    private var flushTimer: Timer?
+
     init() {
         // Restore lifetime peak so the celebration only fires on genuine records.
         metrics = MetricsEngine(initialPeakWPM: UserDefaults.standard.peakWPM)
 
         monitor.onKeyEvent = { [weak self] event in
-            self?.metrics.ingest(event)
+            self?.handleKey(event)
         }
         monitor.onAuthorizationChange = { [weak self] granted in
             DispatchQueue.main.async { self?.permissionGranted = granted }
@@ -49,6 +56,7 @@ final class PetController: ObservableObject {
                     UserDefaults.standard.peakWPM = m.peakWPM
                 }
                 let now = Date()
+                self.handleDayRolloverIfNeeded(now)
                 self.isNight = PetStateMachine.isNight(now)
                 let next = self.stateMachine.evaluate(m, now: now)
                 if next != self.state {
@@ -68,10 +76,54 @@ final class PetController: ObservableObject {
         metrics.start()
         monitor.start()
 
+        // Batch-persist buffered stats / XP every 60s (perf budget).
+        let t = Timer(timeInterval: 60, repeats: true) { [weak self] _ in
+            self?.flush()
+        }
+        RunLoop.main.add(t, forMode: .common)
+        flushTimer = t
+
         // Retry starting the tap until permission is granted (the user may grant
         // it after launch without relaunching).
         if !monitor.isRunning {
             schedulePermissionRetry()
+        }
+    }
+
+    private func handleKey(_ event: KeyEvent) {
+        metrics.ingest(event)
+
+        let calendar = Calendar.current
+        let day = StatsStore.dayString(event.timestamp, calendar: calendar)
+        let hour = calendar.component(.hour, from: event.timestamp)
+        let key = "\(day)-\(hour)"
+        if var bucket = pendingBuckets[key] {
+            bucket.count += 1
+            pendingBuckets[key] = bucket
+        } else {
+            pendingBuckets[key] = (day, hour, 1)
+        }
+        pendingXP += 1
+    }
+
+    /// Flush buffered keystroke counts to the store and award accumulated XP.
+    func flush() {
+        for (_, bucket) in pendingBuckets {
+            StatsStore.shared.add(count: bucket.count, day: bucket.day, hour: bucket.hour)
+        }
+        pendingBuckets.removeAll()
+        if pendingXP > 0 {
+            experience.award(keystrokes: pendingXP)
+            pendingXP = 0
+        }
+    }
+
+    private func handleDayRolloverIfNeeded(_ now: Date) {
+        let today = StatsStore.dayString(now)
+        if today != currentDay {
+            flush()                 // persist yesterday's tail
+            metrics.resetDaily()    // reset today's live counter
+            currentDay = today
         }
     }
 
