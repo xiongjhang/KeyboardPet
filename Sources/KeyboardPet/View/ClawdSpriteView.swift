@@ -35,6 +35,10 @@ struct ClawdSpriteView: View {
                     ClawdEffects.draw(state: state, isNight: controller.isNight,
                                       permissionGranted: controller.permissionGranted,
                                       t: t, ctx: &ctx, size: size)
+                    // Live pixel-art WPM readout while actively typing.
+                    if showsWPM(state) {
+                        ClawdEffects.drawWPM(controller.snapshot.wpm, t: t, ctx: &ctx)
+                    }
                 }
             }
             .frame(width: PetWindowController.petSize.width,
@@ -49,6 +53,14 @@ struct ClawdSpriteView: View {
         guard !frames.isEmpty else { return Image(systemName: "questionmark") }
         let idx = Int(t * state.spriteFPS) % frames.count
         return Image(nsImage: frames[idx])
+    }
+
+    /// Active typing states that should surface the live WPM readout.
+    private func showsWPM(_ state: PetState) -> Bool {
+        switch state {
+        case .typing, .flow, .deleting, .record: return true
+        default: return false
+        }
     }
 
     /// Vertical motion per state (positive = downward), mirroring the cat skin.
@@ -101,6 +113,48 @@ enum ClawdEffects {
 
         if isNight { drawNightcap(ctx: &ctx) }
         if !permissionGranted { drawPermissionHint(size: size, ctx: &ctx) }
+    }
+
+    /// A pixel-art HUD showing the live WPM above the crab's head while typing.
+    /// The colour warms up with speed and turns "hot" past the flow threshold.
+    static func drawWPM(_ wpm: Int, t: TimeInterval, ctx: inout GraphicsContext) {
+        let numStr = "\(wpm)"
+        let numPixel: CGFloat = 4
+        let unitPixel: CGFloat = 2
+        let numTop: CGFloat = 12
+
+        let numW = PixelFont.width(numStr, pixel: numPixel)
+        let unitStr = "WPM"
+        let unitW = PixelFont.width(unitStr, pixel: unitPixel)
+        let unitTop = numTop + PixelFont.height * numPixel + 5
+
+        let color = wpmColor(wpm)
+
+        // Backing HUD panel so the readout stays legible over any wallpaper.
+        let contentW = max(numW, unitW)
+        let panel = CGRect(x: center.x - contentW / 2 - 8,
+                           y: numTop - 6,
+                           width: contentW + 16,
+                           height: (unitTop + PixelFont.height * unitPixel + 6) - (numTop - 6))
+        ctx.fill(Path(roundedRect: panel, cornerRadius: 5), with: .color(.black.opacity(0.32)))
+
+        // Number, with a 1px dark drop-shadow for contrast.
+        PixelFont.drawCentered(numStr, centerX: center.x + 1, top: numTop + 1,
+                               pixel: numPixel, color: .black.opacity(0.5), ctx: &ctx)
+        PixelFont.drawCentered(numStr, centerX: center.x, top: numTop,
+                               pixel: numPixel, color: color, ctx: &ctx)
+        // Unit label.
+        PixelFont.drawCentered(unitStr, centerX: center.x, top: unitTop,
+                               pixel: unitPixel, color: color.opacity(0.85), ctx: &ctx)
+    }
+
+    /// Speed → colour ramp: calm green → warm yellow → hot orange for fast typing.
+    private static func wpmColor(_ wpm: Int) -> Color {
+        switch wpm {
+        case ..<40:   return Color(red: 0.55, green: 0.85, blue: 0.70)  // calm green
+        case 40..<80: return Color(red: 1.0,  green: 0.82, blue: 0.30)  // warm yellow
+        default:      return Color(red: 1.0,  green: 0.45, blue: 0.30)  // hot orange (flow)
+        }
     }
 
     static func drawShadow(size: CGSize, ctx: inout GraphicsContext) {
