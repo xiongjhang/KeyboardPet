@@ -41,4 +41,20 @@ enum PetTheme {
     static func pawBob(_ t: TimeInterval, phase: Double) -> CGFloat {
         CGFloat(sin(t * 14 + phase))
     }
+
+    /// Excited fast bob used for flow / wakeup (-1 ... 1).
+    static func excitedBob(_ t: TimeInterval) -> CGFloat {
+        CGFloat(sin(t * 9))
+    }
+
+    /// Pulsing glow opacity for flow (0.2 ... 0.6).
+    static func glow(_ t: TimeInterval) -> CGFloat {
+        0.4 + 0.2 * CGFloat(sin(t * 4))
+    }
+
+    /// Decaying bounce height for the 2s wakeup pop.
+    static func wakeupBounce(_ phase: TimeInterval) -> CGFloat {
+        let damp = max(0, 1 - phase / 2.0)
+        return CGFloat(abs(sin(phase * 8)) * damp) * 14
+    }
 }

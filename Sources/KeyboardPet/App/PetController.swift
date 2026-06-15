@@ -15,6 +15,10 @@ final class PetController: ObservableObject {
     @Published private(set) var snapshot = Metrics()
     /// Whether Accessibility permission has been granted.
     @Published private(set) var permissionGranted = false
+    /// Whether the late-night overlay is active (00:00–05:00).
+    @Published private(set) var isNight = false
+    /// Reference-time at which the current state began (for transition timing).
+    private(set) var stateChangedAt = Date().timeIntervalSinceReferenceDate
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -27,14 +31,23 @@ final class PetController: ObservableObject {
         monitor.onAuthorizationChange = { [weak self] granted in
             DispatchQueue.main.async { self?.permissionGranted = granted }
         }
+        // New personal WPM record → temporary celebratory state.
+        metrics.onNewRecord = { [weak self] _ in
+            self?.stateMachine.triggerRecord()
+        }
 
         metrics.$metrics
             .receive(on: RunLoop.main)
             .sink { [weak self] m in
                 guard let self else { return }
                 self.snapshot = m
-                let next = self.stateMachine.evaluate(m)
-                if next != self.state { self.state = next }
+                let now = Date()
+                self.isNight = PetStateMachine.isNight(now)
+                let next = self.stateMachine.evaluate(m, now: now)
+                if next != self.state {
+                    self.state = next
+                    self.stateChangedAt = now.timeIntervalSinceReferenceDate
+                }
             }
             .store(in: &cancellables)
     }
