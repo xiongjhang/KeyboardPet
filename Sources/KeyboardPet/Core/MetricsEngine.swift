@@ -23,17 +23,20 @@ final class MetricsEngine: ObservableObject {
 
     // MARK: Tuning
 
+    /// User-tunable thresholds (read live so edits apply without a restart).
+    private var settings: PetSettings { .shared }
+
     /// Sliding window used to estimate WPM.
-    private let wpmWindow: TimeInterval = 10
+    private var wpmWindow: TimeInterval { settings.wpmWindow }
     /// Standard typing-test convention: one "word" == 5 characters/keystrokes.
     /// This matches EdClub / TypeRacer / Monkeytype, so the number is comparable.
     private let charsPerWord = 5.0
     /// Window over which the delete ratio is measured.
-    private let deleteWindow: TimeInterval = 20
+    private var deleteWindow: TimeInterval { settings.deleteWindow }
     /// Idle gap that ends a continuous-coding session.
     private let sessionGap: TimeInterval = 60
     /// WPM threshold considered "flow" (real WPM, i.e. post 5-char normalisation).
-    private let flowThreshold = 60
+    private var flowThreshold: Int { settings.flowThreshold }
 
     // MARK: State
 

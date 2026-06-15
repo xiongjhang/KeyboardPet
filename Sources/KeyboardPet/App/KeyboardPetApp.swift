@@ -22,7 +22,7 @@ struct KeyboardPetApp: App {
         .windowResizability(.contentSize)
 
         Settings {
-            EmptyView()
+            SettingsView()
         }
     }
 }

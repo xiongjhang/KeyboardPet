@@ -6,6 +6,7 @@ struct MenuBarContent: View {
     @EnvironmentObject var controller: PetController
     @ObservedObject private var experience = ExperienceManager.shared
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         let m = controller.snapshot
@@ -29,6 +30,12 @@ struct MenuBarContent: View {
             openWindow(id: "stats")
         }
         .keyboardShortcut("s")
+
+        Button("设置…") {
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
+        }
+        .keyboardShortcut(",")
 
         if !controller.permissionGranted {
             Button("⚠️ 打开辅助功能设置…") { openAccessibilitySettings() }

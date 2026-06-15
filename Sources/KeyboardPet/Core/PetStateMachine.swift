@@ -9,20 +9,22 @@ final class PetStateMachine {
 
     private(set) var current: PetState = .idle
 
-    // MARK: Thresholds (seconds), per the design's state table.
+    // MARK: Thresholds — user-tunable, read live from `PetSettings`.
+
+    private var settings: PetSettings { .shared }
 
     /// Idle below this = actively typing.
-    private let activeThreshold: TimeInterval = 2.0
-    private let thinkingAfter: TimeInterval = 30
-    private let sleepyAfter: TimeInterval = 120
-    private let sleepingAfter: TimeInterval = 300
+    private var activeThreshold: TimeInterval { settings.activeThreshold }
+    private var thinkingAfter: TimeInterval { settings.thinkingAfter }
+    private var sleepyAfter: TimeInterval { settings.sleepyAfter }
+    private var sleepingAfter: TimeInterval { settings.sleepingAfter }
 
     /// Flow requires WPM above threshold sustained for this long.
-    private let flowSustain: TimeInterval = 30
-    private let deleteRateThreshold = 0.5
+    private var flowSustain: TimeInterval { settings.flowSustain }
+    private var deleteRateThreshold: Double { settings.deleteRateThreshold }
 
-    private let recordDuration: TimeInterval = 3
-    private let wakeupDuration: TimeInterval = 2
+    private var recordDuration: TimeInterval { settings.recordDuration }
+    private var wakeupDuration: TimeInterval { settings.wakeupDuration }
 
     // MARK: Timed-transition bookkeeping
 
@@ -60,10 +62,11 @@ final class PetStateMachine {
 
         let next: PetState
         if justTyped {
-            // 3-5. Active typing states, in priority order.
-            if let since = m.flowSince, now.timeIntervalSince(since) >= flowSustain {
+            // 3-5. Active typing states, in priority order (each toggleable).
+            if settings.flowEnabled, let since = m.flowSince,
+               now.timeIntervalSince(since) >= flowSustain {
                 next = .flow
-            } else if m.deleteRate > deleteRateThreshold {
+            } else if settings.deletingEnabled, m.deleteRate > deleteRateThreshold {
                 next = .deleting
             } else {
                 next = .typing
@@ -86,10 +89,18 @@ final class PetStateMachine {
         return next
     }
 
-    /// Whether the system clock is in the late-night window (00:00–05:00).
+    /// Whether the system clock is in the user-defined late-night window.
     /// Drives the `night` overlay, independent of the primary state.
+    ///
+    /// `start == end` (or night disabled) means no night window; `start > end`
+    /// wraps past midnight (e.g. 23 → 6).
     static func isNight(_ date: Date = Date(), calendar: Calendar = .current) -> Bool {
+        let s = PetSettings.shared
+        guard s.nightEnabled else { return false }
+        let start = s.nightStartHour, end = s.nightEndHour
+        guard start != end else { return false }
         let hour = calendar.component(.hour, from: date)
-        return hour >= 0 && hour < 5
+        if start < end { return hour >= start && hour < end }
+        return hour >= start || hour < end   // wraps midnight
     }
 }
