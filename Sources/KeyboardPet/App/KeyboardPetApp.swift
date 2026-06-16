@@ -12,7 +12,8 @@ struct KeyboardPetApp: App {
             MenuBarContent()
                 .environmentObject(controller)
         } label: {
-            Text(controller.state.emoji)
+            // Static monochrome pixel-crab (template image, auto light/dark).
+            Image(nsImage: MenuBarIcon.image)
         }
 
         Window("KeyboardPet 统计", id: "stats") {
