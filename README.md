@@ -45,10 +45,30 @@ the app identity each build).
 
 ### Pet states
 
-The pet reacts to your typing in real time: `idle` → `typing` → `flow`
-(WPM > 80 sustained), `deleting` (lots of backspaces), `thinking` / `sleepy` /
-`sleeping` as you go idle, a `wakeup` startle when you resume, a `record`
-celebration on a new peak WPM, and a nightcap overlay during 00:00–05:00.
+The pet reacts to your typing in real time. The clips below are rendered from
+the actual desktop view, so they match what you see on screen — sweat drops,
+`zzz`, fireworks, the live WPM readout and all. During 00:00–05:00 a nightcap
+overlay is baked into the sprites (a sleepier, night-mode look).
+
+<sub>Regenerate these with <code>./Tools/render_state_gifs.sh</code> after changing the sprites or effects.</sub>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/states/idle.gif" width="96" alt="idle"><br><b>idle</b><br><sub>resting, the occasional blink</sub></td>
+    <td align="center"><img src="docs/states/typing.gif" width="96" alt="typing"><br><b>typing</b><br><sub>you're actively typing</sub></td>
+    <td align="center"><img src="docs/states/flow.gif" width="96" alt="flow"><br><b>flow</b><br><sub>WPM &gt; 80 sustained</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/states/deleting.gif" width="96" alt="deleting"><br><b>deleting</b><br><sub>lots of backspaces</sub></td>
+    <td align="center"><img src="docs/states/thinking.gif" width="96" alt="thinking"><br><b>thinking</b><br><sub>a short pause</sub></td>
+    <td align="center"><img src="docs/states/sleepy.gif" width="96" alt="sleepy"><br><b>sleepy</b><br><sub>idle longer, yawning</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/states/sleeping.gif" width="96" alt="sleeping"><br><b>sleeping</b><br><sub>idle long enough to doze</sub></td>
+    <td align="center"><img src="docs/states/wakeup.gif" width="96" alt="wakeup"><br><b>wakeup</b><br><sub>startle when you resume</sub></td>
+    <td align="center"><img src="docs/states/record.gif" width="96" alt="record"><br><b>record</b><br><sub>celebrating a new peak WPM</sub></td>
+  </tr>
+</table>
 
 ## Development (SwiftPM)
 

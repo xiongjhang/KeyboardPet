@@ -6,47 +6,68 @@ import SwiftUI
 struct ClawdSpriteView: View {
     @EnvironmentObject var controller: PetController
 
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            ClawdSpriteContent(state: controller.state,
+                               t: t,
+                               age: max(0, t - controller.stateChangedAt),
+                               isNight: controller.isNight,
+                               wpm: controller.snapshot.wpm,
+                               permissionGranted: controller.permissionGranted)
+        }
+    }
+}
+
+/// The pure, time-driven rendering of the crab + its effects for a single
+/// instant `t`. Splitting this out of `ClawdSpriteView` lets both the live
+/// `TimelineView` and the offscreen GIF renderer (`--render-gifs`) share one
+/// source of truth, so exported animations match the desktop pixel-for-pixel.
+struct ClawdSpriteContent: View {
+    let state: PetState
+    /// Absolute time in seconds (reference-date based), as used by the live view.
+    let t: TimeInterval
+    /// Seconds since the state was entered (drives the wakeup startle bounce).
+    let age: TimeInterval
+    let isNight: Bool
+    let wpm: Int
+    let permissionGranted: Bool
+
     /// On-screen size of the crab sprite (the 64px art is scaled up crisply).
     private let spriteSize: CGFloat = 150
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            let state = controller.state
-            let age = max(0, t - controller.stateChangedAt)
+        ZStack {
+            // Behind-the-body effects.
+            Canvas { ctx, size in
+                ClawdEffects.drawShadow(size: size, ctx: &ctx)
+                if state == .flow { ClawdEffects.drawGlow(size: size, t: t, ctx: &ctx) }
+                if state == .record { ClawdEffects.drawFireworks(size: size, t: t, ctx: &ctx) }
+            }
 
-            ZStack {
-                // Behind-the-body effects.
-                Canvas { ctx, size in
-                    ClawdEffects.drawShadow(size: size, ctx: &ctx)
-                    if state == .flow { ClawdEffects.drawGlow(size: size, t: t, ctx: &ctx) }
-                    if state == .record { ClawdEffects.drawFireworks(size: size, t: t, ctx: &ctx) }
-                }
+            // The nightcap is baked into the night sprite variants, so it
+            // shares the crab's pixel grid and moves with the body.
+            sprite(for: state, t: t, isNight: isNight)
+                .interpolation(.none)
+                .resizable()
+                .frame(width: spriteSize, height: spriteSize)
+                .scaleEffect(state == .idle ? PetTheme.breathing(t) : 1.0)
+                .offset(y: bobOffset(state: state, t: t, age: age))
 
-                // The nightcap is baked into the night sprite variants, so it
-                // shares the crab's pixel grid and moves with the body.
-                sprite(for: state, t: t, isNight: controller.isNight)
-                    .interpolation(.none)
-                    .resizable()
-                    .frame(width: spriteSize, height: spriteSize)
-                    .scaleEffect(state == .idle ? PetTheme.breathing(t) : 1.0)
-                    .offset(y: bobOffset(state: state, t: t, age: age))
-
-                // In-front ambient bubbles / readout (do not bob with the body).
-                Canvas { ctx, size in
-                    ClawdEffects.draw(state: state,
-                                      permissionGranted: controller.permissionGranted,
-                                      t: t, ctx: &ctx, size: size)
-                    // Live pixel-art WPM readout while actively typing.
-                    if showsWPM(state) {
-                        ClawdEffects.drawWPM(controller.snapshot.wpm, t: t, ctx: &ctx)
-                    }
+            // In-front ambient bubbles / readout (do not bob with the body).
+            Canvas { ctx, size in
+                ClawdEffects.draw(state: state,
+                                  permissionGranted: permissionGranted,
+                                  t: t, ctx: &ctx, size: size)
+                // Live pixel-art WPM readout while actively typing.
+                if showsWPM(state) {
+                    ClawdEffects.drawWPM(wpm, t: t, ctx: &ctx)
                 }
             }
-            .frame(width: PetWindowController.petSize.width,
-                   height: PetWindowController.petSize.height)
-            .contentShape(Rectangle())
         }
+        .frame(width: PetWindowController.petSize.width,
+               height: PetWindowController.petSize.height)
+        .contentShape(Rectangle())
     }
 
     /// Picks the current animation frame for a state.

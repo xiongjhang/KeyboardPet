@@ -1,7 +1,6 @@
 import SwiftUI
 import AppKit
 
-@main
 struct KeyboardPetApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @ObservedObject private var controller = PetController.shared
