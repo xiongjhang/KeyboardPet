@@ -12,6 +12,8 @@ final class PetSettings: ObservableObject {
 
     /// Default values — the single place that defines "factory settings".
     enum Default {
+        // Appearance.
+        static let petScale = 1.0              // 1.0 == base 200pt window
         // Idle progression (seconds).
         static let thinkingAfter = 30.0
         static let sleepyAfter = 120.0
@@ -37,6 +39,7 @@ final class PetSettings: ObservableObject {
     }
 
     private enum Key {
+        static let petScale = "cfg.petScale"
         static let thinkingAfter = "cfg.thinkingAfter"
         static let sleepyAfter = "cfg.sleepyAfter"
         static let sleepingAfter = "cfg.sleepingAfter"
@@ -55,6 +58,7 @@ final class PetSettings: ObservableObject {
         static let wakeupDuration = "cfg.wakeupDuration"
 
         static let all = [
+            petScale,
             thinkingAfter, sleepyAfter, sleepingAfter, flowEnabled, flowThreshold,
             flowSustain, deletingEnabled, deleteRateThreshold, nightEnabled,
             nightStartHour, nightEndHour, activeThreshold, wpmWindow, deleteWindow,
@@ -64,6 +68,14 @@ final class PetSettings: ObservableObject {
 
     private let defaults: UserDefaults
     private init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+
+    // MARK: Appearance
+
+    /// On-screen scale of the desktop crab (1.0 == base size).
+    var petScale: Double {
+        get { read(Key.petScale, Default.petScale) }
+        set { write(newValue, Key.petScale) }
+    }
 
     // MARK: Idle progression
 

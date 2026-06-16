@@ -8,6 +8,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            appearanceSection
             idleSection
             flowSection
             deletingSection
@@ -17,6 +18,14 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 470, height: 600)
+    }
+
+    // MARK: 外观
+
+    private var appearanceSection: some View {
+        Section("外观") {
+            percentRow("桌面螃蟹大小", bind(\.petScale), range: 0.6...2.0)
+        }
     }
 
     // MARK: 空闲节奏
