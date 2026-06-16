@@ -59,7 +59,8 @@ extension PetState {
         case .record:   return 6
         case .idle:     return 0.8   // slow → reads as the occasional blink
         case .thinking: return 1.2
-        case .sleepy, .sleeping: return 0.6
+        case .sleepy:   return 0.9   // slow yawn open/close cycle
+        case .sleeping: return 0.6
         case .wakeup:   return 1
         }
     }

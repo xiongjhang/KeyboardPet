@@ -73,7 +73,7 @@ func cutRect(_ ctx: CGContext, _ x: Int, _ y: Int, _ w: Int, _ h: Int) {
 
 // MARK: - Poses
 
-enum Face { case open, blink, sparkle, worried, half, closed, shock, grin }
+enum Face { case open, blink, sparkle, worried, half, closed, shock, grin, yawn }
 enum ClawPose { case rest, up, down, chin, frantic }
 
 func drawClaw(_ ctx: CGContext, left: Bool, lift: Int) {
@@ -116,7 +116,8 @@ func drawEye(_ ctx: CGContext, cx: Int, face: Face, look: Int) {
     case .closed, .blink:
         // happy closed eye: a short flat line
         rect(ctx, cx - 4, eyeY + 4, 9, 2, pupil)
-    case .half:
+    case .half, .yawn:
+        // droopy, half-lidded eyes (drowsy)
         ellipse(ctx, cx - 4, eyeY, 10, 11, eyeWhite)
         rect(ctx, cx - 5, eyeY + 6, 12, 6, shellDark) // heavy lid
         rect(ctx, cx - 2 + look, eyeY + 2, 3, 3, pupil)
@@ -148,6 +149,10 @@ func drawMouth(_ ctx: CGContext, face: Face) {
         rect(ctx, mx + 1, my + 1, 4, 2, pupil)
     case .shock:
         ellipse(ctx, mx - 3, my - 4, 7, 7, pupil)
+    case .yawn:
+        // wide-open yawning mouth
+        ellipse(ctx, mx - 4, my - 5, 9, 10, pupil)
+        ellipse(ctx, mx - 2, my - 1, 5, 4, blush)   // tongue hint
     case .half, .closed:
         rect(ctx, mx - 2, my - 2, 5, 2, pupil)
     default:
@@ -278,7 +283,7 @@ let frames: [String: [(Face, ClawPose, Bool)]] = [
     "flow":     [(.sparkle, .up, false), (.sparkle, .down, false)],
     "deleting": [(.worried, .frantic, false), (.worried, .frantic, false)],
     "thinking": [(.open, .chin, false), (.blink, .chin, false)],
-    "sleepy":   [(.half, .rest, false), (.half, .rest, false)],
+    "sleepy":   [(.half, .rest, false), (.yawn, .rest, false)],
     "sleeping": [(.closed, .rest, true), (.closed, .rest, true)],
     "wakeup":   [(.shock, .up, false)],
     "record":   [(.grin, .up, false), (.grin, .down, false)],

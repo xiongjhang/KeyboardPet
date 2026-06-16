@@ -97,7 +97,8 @@ enum ClawdEffects {
         case .thinking:
             bubble("?", at: CGPoint(x: center.x + 56, y: headTop - 4), size: 30,
                    color: PetTheme.outlineColor, ctx: &ctx)
-        case .sleepy, .sleeping:
+        case .sleeping:
+            // "zzz" only once actually asleep; sleepy just shows droopy eyes.
             let base = CGPoint(x: center.x + 44, y: headTop)
             for i in 0..<3 {
                 let phase = (t * 0.6 + Double(i) * 0.33).truncatingRemainder(dividingBy: 1)
