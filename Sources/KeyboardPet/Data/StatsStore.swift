@@ -46,6 +46,11 @@ final class StatsStore {
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
 
+    static func monthString(_ date: Date = Date(), calendar: Calendar = .current) -> String {
+        let c = calendar.dateComponents([.year, .month], from: date)
+        return String(format: "%04d-%02d", c.year ?? 0, c.month ?? 0)
+    }
+
     /// Add `count` keystrokes to the (day, hour) bucket.
     func add(count: Int, day: String, hour: Int) {
         guard count > 0 else { return }
@@ -65,6 +70,20 @@ final class StatsStore {
         let rows = (try? context.fetch(descriptor)) ?? []
         var result: [Int: Int] = [:]
         for row in rows { result[row.hour] = row.count }
+        return result
+    }
+
+    /// Day-of-month → keystroke count for the given month "yyyy-MM"
+    /// (days with 0 omitted). Aggregates every hour bucket in that month.
+    func dailyCounts(forMonth month: String) -> [Int: Int] {
+        let prefix = month + "-"
+        let descriptor = FetchDescriptor<HourStat>(predicate: #Predicate { $0.day.starts(with: prefix) })
+        let rows = (try? context.fetch(descriptor)) ?? []
+        var result: [Int: Int] = [:]
+        for row in rows {
+            let day = Int(row.day.suffix(2)) ?? 0
+            result[day, default: 0] += row.count
+        }
         return result
     }
 }
