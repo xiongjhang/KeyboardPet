@@ -26,3 +26,6 @@ Package.resolved
 
 # Built app bundle
 KeyboardPet.app/
+
+# Scratch / local notes
+tmp/
