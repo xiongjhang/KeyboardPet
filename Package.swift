@@ -13,6 +13,11 @@ let package = Package(
             resources: [
                 .copy("Resources/Sprites")
             ]
+        ),
+        .testTarget(
+            name: "KeyboardPetTests",
+            dependencies: ["KeyboardPet"],
+            path: "Tests/KeyboardPetTests"
         )
     ]
 )
