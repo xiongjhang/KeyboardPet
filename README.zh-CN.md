@@ -72,6 +72,17 @@
 
 应用必须从 `.app` 包运行，macOS 才能为其授予辅助功能权限（全局键盘监听所必需）。
 
+### 下载安装（推荐）
+
+从 [Releases](https://github.com/xiongjhang/KeyboardPet/releases) 页面下载最新的
+`KeyboardPet-x.y.z.dmg`，打开后把 **KeyboardPet** 拖入**应用程序**文件夹即可。
+
+> 发布版做了临时签名，但**未做公证**，因此首次启动时 macOS 可能提示「来自身份不
+> 明的开发者」。右键点击应用选择**打开**，或执行
+> `xattr -dr com.apple.quarantine /Applications/KeyboardPet.app`。
+
+### 从源码构建
+
 ```bash
 git clone https://github.com/xiongjhang/KeyboardPet.git
 cd KeyboardPet
@@ -82,6 +93,9 @@ cd KeyboardPet
 # 或仅构建
 ./build_app.sh
 open KeyboardPet.app
+
+# 或构建可分发的 .dmg
+./package_dmg.sh
 ```
 
 ### 首次启动：授予辅助功能权限
@@ -97,21 +111,35 @@ open KeyboardPet.app
 
 - 宠物默认浮在屏幕右下角、其他窗口之上。
 - **拖动**到任意位置，它会记住。
-- **菜单栏图标**展示实时摘要：等级 / 经验、今日按键数、当前与峰值 WPM。由此可打开
-  **统计面板**（今日总览、按小时热力图、月度日历）或退出应用。
-- 在**设置**中可调整桌面螃蟹的大小。
+- **菜单栏图标**展示实时摘要：等级 / 经验、今日按键数、当前与峰值 WPM、应用版本号
+  以及项目链接。由此可打开**统计面板**（今日总览、按小时热力图、月度日历）或退出应用。
+- 在**设置**中可开启**登录时启动**、调整桌面螃蟹大小、微调状态机阈值，并**导出**或
+  **清除**你的数据。
 
 ## 🔒 隐私说明
 
 KeyboardPet **只**记录物理键位码与时间戳，仅用于计算聚合指标（WPM、删除率、空闲时长）。
 它绝不记录你输入的字符、窗口标题或应用名，也从不联网。
 
+你随时可以通过**设置 ▸ 数据 ▸ 导出**查看具体存了哪些内容（仅聚合计数的 JSON 文件），
+或用**清除所有数据**一键抹除。
+
+## 🔄 更新
+
+KeyboardPet **没有内置更新检查**——这是有意为之，以兑现「绝不联网」的承诺。需要更新时，
+从 [Releases](https://github.com/xiongjhang/KeyboardPet/releases) 下载更新的 `.dmg`，
+替换应用程序文件夹中的旧版本即可。你的统计与设置（均存于本地）会自动保留。可 Watch /
+Star 本仓库以便在新版本发布时收到通知。
+
 ## 🛠️ 开发
 
 ```bash
 swift build              # 调试构建
 swift build -c release   # 发布构建
+swift test               # 运行单元测试
 ```
+
+完整开发流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，版本历史见 [CHANGELOG.md](CHANGELOG.md)。
 
 本 README 中的宠物状态动图由应用自身生成：隐藏的 `--render-gifs <目录>` 启动模式会
 通过**真实桌面视图**离屏渲染每个状态，因此导出的动画与屏幕显示完全一致。
