@@ -34,6 +34,14 @@ final class ExperienceManager: ObservableObject {
         return level > oldLevel
     }
 
+    /// Erase all earned XP, dropping back to level 1.
+    func reset() {
+        totalXP = 0
+        level = 1
+        UserDefaults.standard.totalXP = 0
+        UserDefaults.standard.petLevel = 1
+    }
+
     /// Progress through the current level, 0.0 ... 1.0.
     var levelProgress: Double {
         let floor = ExperienceManager.xpForLevel(level)

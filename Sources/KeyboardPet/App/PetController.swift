@@ -120,6 +120,17 @@ final class PetController: ObservableObject {
         }
     }
 
+    /// Erase all persisted history: hourly stats, XP/level, and the peak-WPM
+    /// record. Drops any buffered (un-flushed) counts too.
+    func eraseAllData() {
+        pendingBuckets.removeAll()
+        pendingXP = 0
+        StatsStore.shared.eraseAll()
+        experience.reset()
+        UserDefaults.standard.peakWPM = 0
+        metrics.resetAllCounters()
+    }
+
     private func handleDayRolloverIfNeeded(_ now: Date) {
         let today = StatsStore.dayString(now)
         if today != currentDay {
