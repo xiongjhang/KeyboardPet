@@ -204,7 +204,8 @@ enum ClawdEffects {
             let radius = CGFloat(phase) * 32
             let alpha = 1 - phase
             for a in stride(from: 0.0, to: .pi * 2, by: .pi / 5) {
-                let p = CGPoint(x: burst.0.x + cos(a) * radius, y: burst.0.y + sin(a) * radius)
+                let p = CGPoint(x: burst.0.x + CGFloat(cos(a)) * radius,
+                                y: burst.0.y + CGFloat(sin(a)) * radius)
                 ctx.fill(Path(ellipseIn: CGRect(x: p.x - 2.5, y: p.y - 2.5, width: 5, height: 5)),
                          with: .color(burst.1.opacity(alpha)))
             }
