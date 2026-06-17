@@ -27,5 +27,9 @@ Package.resolved
 # Built app bundle
 KeyboardPet.app/
 
+# Distributable artifacts
+*.dmg
+dist/
+
 # Scratch / local notes
 tmp/
