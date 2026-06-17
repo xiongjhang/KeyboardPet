@@ -4,10 +4,12 @@ import SwiftUI
 /// Bound directly to `PetSettings.shared`; every edit applies live.
 struct SettingsView: View {
     @ObservedObject private var settings = PetSettings.shared
+    @ObservedObject private var launchAtLogin = LaunchAtLogin.shared
     @State private var showAdvanced = false
 
     var body: some View {
         Form {
+            generalSection
             appearanceSection
             idleSection
             flowSection
@@ -18,6 +20,25 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 470, height: 600)
+    }
+
+    // MARK: 通用
+
+    private var generalSection: some View {
+        Section {
+            Toggle("登录时启动", isOn: $launchAtLogin.isEnabled)
+                .disabled(!launchAtLogin.isSupported)
+        } header: {
+            Text("通用")
+        } footer: {
+            if !launchAtLogin.isSupported {
+                Text("以 .app 形式运行时可用（请通过 build_app.sh 构建）。")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if let err = launchAtLogin.lastError {
+                Text("设置失败：\(err)")
+                    .font(.caption).foregroundStyle(.red)
+            }
+        }
     }
 
     // MARK: 外观
