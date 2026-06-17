@@ -80,6 +80,19 @@ overlay is baked into the sprites (a sleepier, night-mode look).
 The app must run from a `.app` bundle so macOS can grant it Accessibility
 permission (required for global keyboard monitoring).
 
+### Download (recommended)
+
+Grab the latest `KeyboardPet-x.y.z.dmg` from the
+[Releases](https://github.com/xiongjhang/KeyboardPet/releases) page, open it,
+and drag **KeyboardPet** into **Applications**.
+
+> The release build is ad-hoc signed but **not notarized**, so on first launch
+> macOS may say it's from an unidentified developer. Right-click the app and
+> choose **Open**, or run
+> `xattr -dr com.apple.quarantine /Applications/KeyboardPet.app`.
+
+### Build from source
+
 ```bash
 git clone https://github.com/xiongjhang/KeyboardPet.git
 cd KeyboardPet
@@ -90,6 +103,9 @@ cd KeyboardPet
 # …or build only
 ./build_app.sh
 open KeyboardPet.app
+
+# …or build a distributable .dmg
+./package_dmg.sh
 ```
 
 ### First launch: grant Accessibility permission
@@ -107,9 +123,12 @@ open KeyboardPet.app
 - The pet floats above other windows in the bottom-right corner.
 - **Drag** it anywhere — its position is remembered.
 - The **menu bar icon** shows a live summary: level / XP, today's keystrokes,
-  current & peak WPM. From there you can open the **stats panel** (today's
-  totals, hourly heatmap, monthly calendar) or quit.
-- Adjust the on-desktop crab size in **Settings**.
+  current & peak WPM, the app version, and a project link. From there you can
+  open the **stats panel** (today's totals, hourly heatmap, monthly calendar)
+  or quit.
+- In **Settings** you can enable **launch at login**, adjust the on-desktop crab
+  size, tune the state-machine thresholds, and **export** or **erase** your
+  data.
 
 ## 🔒 Privacy
 
@@ -117,12 +136,28 @@ KeyboardPet records **only** physical key codes and timestamps, used purely to
 compute aggregate metrics (WPM, delete rate, idle time). It never records typed
 characters, window titles, or app names, and it never connects to the network.
 
+You can inspect exactly what's stored at any time via **Settings ▸ Data ▸
+Export** (a JSON file of aggregate counts only), or wipe everything with
+**Erase all data**.
+
+## 🔄 Updating
+
+KeyboardPet has **no built-in update checker** — that's deliberate, so the app
+keeps its promise of zero network access. To update, download the newer `.dmg`
+from [Releases](https://github.com/xiongjhang/KeyboardPet/releases) and replace
+the app in Applications. Your stats and settings (stored locally) carry over.
+Watch / star the repo to be notified of new releases.
+
 ## 🛠️ Development
 
 ```bash
 swift build              # debug build
 swift build -c release   # release build
+swift test               # run the unit tests
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow and
+[CHANGELOG.md](CHANGELOG.md) for the release history.
 
 The pet-state GIFs in this README are produced by the app itself: a hidden
 `--render-gifs <dir>` launch mode renders each state offscreen through the real

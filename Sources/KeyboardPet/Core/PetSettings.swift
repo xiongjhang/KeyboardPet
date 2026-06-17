@@ -8,7 +8,10 @@ import Combine
 /// `Default` values double as the "reset to defaults" target.
 final class PetSettings: ObservableObject {
 
-    static let shared = PetSettings()
+    /// Shared instance read live by the engines. Declared `var` so tests can
+    /// swap in an isolated instance backed by a throwaway `UserDefaults` suite
+    /// (and restore it afterwards) without touching the user's real settings.
+    static var shared = PetSettings()
 
     /// Default values — the single place that defines "factory settings".
     enum Default {
@@ -67,7 +70,7 @@ final class PetSettings: ObservableObject {
     }
 
     private let defaults: UserDefaults
-    private init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
 
     // MARK: Appearance
 

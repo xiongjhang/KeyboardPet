@@ -1,23 +1,54 @@
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
 /// User-facing settings for the state-machine / metrics thresholds.
 /// Bound directly to `PetSettings.shared`; every edit applies live.
 struct SettingsView: View {
     @ObservedObject private var settings = PetSettings.shared
+    @ObservedObject private var launchAtLogin = LaunchAtLogin.shared
     @State private var showAdvanced = false
+    @State private var showEraseConfirm = false
 
     var body: some View {
         Form {
+            generalSection
             appearanceSection
             idleSection
             flowSection
             deletingSection
             nightSection
             advancedSection
+            dataSection
             resetSection
         }
         .formStyle(.grouped)
         .frame(width: 470, height: 600)
+        .alert("清除所有数据？", isPresented: $showEraseConfirm) {
+            Button("取消", role: .cancel) {}
+            Button("清除", role: .destructive) { PetController.shared.eraseAllData() }
+        } message: {
+            Text("将永久删除全部击键统计、经验/等级和峰值 WPM 记录。此操作无法撤销。")
+        }
+    }
+
+    // MARK: 通用
+
+    private var generalSection: some View {
+        Section {
+            Toggle("登录时启动", isOn: $launchAtLogin.isEnabled)
+                .disabled(!launchAtLogin.isSupported)
+        } header: {
+            Text("通用")
+        } footer: {
+            if !launchAtLogin.isSupported {
+                Text("以 .app 形式运行时可用（请通过 build_app.sh 构建）。")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if let err = launchAtLogin.lastError {
+                Text("设置失败：\(err)")
+                    .font(.caption).foregroundStyle(.red)
+            }
+        }
     }
 
     // MARK: 外观
@@ -102,6 +133,38 @@ struct SettingsView: View {
         } footer: {
             Text("一般无需改动；除非你想微调指标灵敏度或动画时长。")
                 .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: 数据
+
+    private var dataSection: some View {
+        Section {
+            Button {
+                exportData()
+            } label: {
+                Label("导出数据…", systemImage: "square.and.arrow.up")
+            }
+            Button(role: .destructive) {
+                showEraseConfirm = true
+            } label: {
+                Label("清除所有数据…", systemImage: "trash")
+            }
+        } header: {
+            Text("数据")
+        } footer: {
+            Text("导出为 JSON（仅含聚合的逐小时击键数、经验与记录，绝不含输入内容）。")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func exportData() {
+        guard let data = DataExporter.makeJSON() else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "keyboardpet-data.json"
+        panel.allowedContentTypes = [.json]
+        if panel.runModal() == .OK, let url = panel.url {
+            try? data.write(to: url)
         }
     }
 

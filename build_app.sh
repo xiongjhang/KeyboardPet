@@ -26,6 +26,7 @@ rm -rf "${APP_DIR}"
 mkdir -p "${MACOS_DIR}" "${RES_DIR}"
 cp "${BIN_PATH}" "${MACOS_DIR}/${APP_NAME}"
 cp "Resources/Info.plist" "${APP_DIR}/Contents/Info.plist"
+cp "Resources/AppIcon.icns" "${RES_DIR}/AppIcon.icns"
 
 # Copy SwiftPM resource bundles (sprite assets) next to the binary so
 # `Bundle.module` resolves them at runtime.

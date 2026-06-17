@@ -41,8 +41,27 @@ struct MenuBarContent: View {
             Button("⚠️ 打开辅助功能设置…") { openAccessibilitySettings() }
         }
 
+        Divider()
+
+        Text("KeyboardPet \(Self.appVersion)")
+        Button("在 GitHub 上查看项目…") { openProjectPage() }
+
         Button("退出 KeyboardPet") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
+    }
+
+    /// "v1.2.3 (45)" from the bundle, or "dev" when run unbundled (`swift run`).
+    static var appVersion: String {
+        let info = Bundle.main.infoDictionary
+        guard let short = info?["CFBundleShortVersionString"] as? String else { return "dev" }
+        let build = info?["CFBundleVersion"] as? String
+        return build.map { "v\(short) (\($0))" } ?? "v\(short)"
+    }
+
+    private func openProjectPage() {
+        if let url = URL(string: "https://github.com/xiongjhang/KeyboardPet") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     private func openAccessibilitySettings() {

@@ -93,6 +93,13 @@ final class MetricsEngine: ObservableObject {
         metrics.todayKeystrokes = 0
     }
 
+    /// Zero the live today-counter and the peak-WPM record (used when the user
+    /// erases all data).
+    func resetAllCounters() {
+        metrics.todayKeystrokes = 0
+        metrics.peakWPM = 0
+    }
+
     private func recompute(now: Date = Date()) {
         // Trim sliding windows.
         keystrokeTimes.removeAll { now.timeIntervalSince($0) > wpmWindow }

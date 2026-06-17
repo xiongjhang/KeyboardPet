@@ -73,6 +73,18 @@ final class StatsStore {
         return result
     }
 
+    /// Every stored (day, hour, count) row — used for data export.
+    func allHourly() -> [(day: String, hour: Int, count: Int)] {
+        let rows = (try? context.fetch(FetchDescriptor<HourStat>())) ?? []
+        return rows.map { ($0.day, $0.hour, $0.count) }
+    }
+
+    /// Permanently delete every stored keystroke bucket.
+    func eraseAll() {
+        try? context.delete(model: HourStat.self)
+        try? context.save()
+    }
+
     /// Day-of-month → keystroke count for the given month "yyyy-MM"
     /// (days with 0 omitted). Aggregates every hour bucket in that month.
     func dailyCounts(forMonth month: String) -> [Int: Int] {
