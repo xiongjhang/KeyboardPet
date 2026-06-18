@@ -12,7 +12,8 @@ use std::time::Duration;
 
 use chrono::{Local, Utc};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::menu::MenuItem;
+use tauri::{AppHandle, Emitter, Manager, Wry};
 
 use crate::core::stats_store::{day_string, hour_of};
 use crate::core::{ExperienceManager, MetricsEngine, PetStateMachine, Settings, StatsStore};
@@ -75,6 +76,16 @@ impl AppState {
     }
 }
 
+/// Live tray-menu summary lines (display-only), refreshed each tick to mirror
+/// the Swift menu-bar dropdown.
+pub struct TraySummary {
+    pub status: MenuItem<Wry>,
+    pub level: MenuItem<Wry>,
+    pub today: MenuItem<Wry>,
+    pub wpm: MenuItem<Wry>,
+    pub peak: MenuItem<Wry>,
+}
+
 /// Snapshot pushed to the pet window on every tick.
 #[derive(Serialize, Clone)]
 struct PetUpdate {
@@ -93,7 +104,7 @@ struct PetUpdate {
 
 /// Start keyboard monitoring, persistence, and the state ticker. Call once from
 /// `setup`. Returns the managed state so the caller can register it.
-pub fn launch(app: &AppHandle) -> Arc<AppState> {
+pub fn launch(app: &AppHandle, tray: TraySummary) -> Arc<AppState> {
     // macOS: the listener needs Accessibility permission (prompts on first run).
     #[cfg(target_os = "macos")]
     {
@@ -223,6 +234,19 @@ pub fn launch(app: &AppHandle) -> Arc<AppState> {
                 }
                 tick_state.save_profile_now();
             }
+
+            // Refresh the tray summary lines (display-only).
+            let night = if update.is_night { " · 🌙" } else { "" };
+            let _ = tray.status.set_text(format!(
+                "KeyboardPet {} {}{}",
+                update.emoji, update.display_name, night
+            ));
+            let _ = tray
+                .level
+                .set_text(format!("Lv.{} · 还需 {} XP 升级", update.level, update.xp_to_next));
+            let _ = tray.today.set_text(format!("今日击键：{}", update.today_keystrokes));
+            let _ = tray.wpm.set_text(format!("当前 WPM：{}", update.wpm));
+            let _ = tray.peak.set_text(format!("峰值 WPM：{}", update.peak_wpm));
 
             let _ = handle.emit("pet-update", update);
         }

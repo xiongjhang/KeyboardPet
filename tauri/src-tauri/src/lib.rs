@@ -12,7 +12,9 @@ use tauri::{
     Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
 };
 
-use crate::runtime::AppState;
+use crate::runtime::{AppState, TraySummary};
+
+const PROJECT_URL: &str = "https://github.com/xiongjhang/KeyboardPet";
 
 /// Move the pet window to the bottom-right corner of the primary monitor,
 /// mirroring the macOS app's default placement (first run only).
@@ -51,6 +53,18 @@ fn open_window(app: &tauri::AppHandle, label: &str, url: &str, title: &str, w: f
         .build();
 }
 
+/// Open a URL in the default browser (used for the project link).
+fn open_url(url: &str) {
+    #[cfg(target_os = "macos")]
+    let _ = std::process::Command::new("open").arg(url).spawn();
+    #[cfg(target_os = "windows")]
+    let _ = std::process::Command::new("cmd")
+        .args(["/C", "start", "", url])
+        .spawn();
+    #[cfg(target_os = "linux")]
+    let _ = std::process::Command::new("xdg-open").arg(url).spawn();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -75,16 +89,47 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            // Tray icon + menu.
-            let toggle = MenuItem::with_id(app, "toggle", "显示/隐藏宠物", true, None::<&str>)?;
-            let stats = MenuItem::with_id(app, "stats", "统计面板…", true, None::<&str>)?;
-            let settings = MenuItem::with_id(app, "settings", "设置…", true, None::<&str>)?;
-            let sep = PredefinedMenuItem::separator(app)?;
-            let quit = MenuItem::with_id(app, "quit", "退出 KeyboardPet", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&toggle, &stats, &settings, &sep, &quit])?;
+            // Live summary lines (disabled = display-only), updated each tick.
+            let i_status = MenuItem::with_id(app, "i_status", "KeyboardPet", false, None::<&str>)?;
+            let i_level = MenuItem::with_id(app, "i_level", "Lv.1", false, None::<&str>)?;
+            let i_today = MenuItem::with_id(app, "i_today", "今日击键：0", false, None::<&str>)?;
+            let i_wpm = MenuItem::with_id(app, "i_wpm", "当前 WPM：0", false, None::<&str>)?;
+            let i_peak = MenuItem::with_id(app, "i_peak", "峰值 WPM：0", false, None::<&str>)?;
+            let version = format!("KeyboardPet v{}", env!("CARGO_PKG_VERSION"));
+            let i_version = MenuItem::with_id(app, "i_version", &version, false, None::<&str>)?;
 
+            // Actions.
+            let toggle = MenuItem::with_id(app, "toggle", "显示/隐藏宠物", true, None::<&str>)?;
+            let stats = MenuItem::with_id(app, "stats", "打开统计面板…", true, None::<&str>)?;
+            let settings = MenuItem::with_id(app, "settings", "设置…", true, None::<&str>)?;
+            let github = MenuItem::with_id(app, "github", "在 GitHub 上查看项目…", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "退出 KeyboardPet", true, None::<&str>)?;
+
+            let menu = Menu::with_items(
+                app,
+                &[
+                    &i_status,
+                    &i_level,
+                    &PredefinedMenuItem::separator(app)?,
+                    &i_today,
+                    &i_wpm,
+                    &i_peak,
+                    &PredefinedMenuItem::separator(app)?,
+                    &toggle,
+                    &stats,
+                    &settings,
+                    &PredefinedMenuItem::separator(app)?,
+                    &i_version,
+                    &github,
+                    &quit,
+                ],
+            )?;
+
+            // Tray icon: the monochrome pixel crab (template-tinted on macOS).
+            let tray_icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray.png"))?;
             TrayIconBuilder::with_id("main")
-                .icon(app.default_window_icon().unwrap().clone())
+                .icon(tray_icon)
+                .icon_as_template(true)
                 .tooltip("KeyboardPet")
                 .menu(&menu)
                 .show_menu_on_left_click(false)
@@ -105,16 +150,17 @@ pub fn run() {
                         }
                     }
                     "stats" => {
-                        open_window(app, "stats", "stats.html", "KeyboardPet 统计", 520.0, 600.0)
+                        open_window(app, "stats", "stats.html", "KeyboardPet 统计", 500.0, 640.0)
                     }
                     "settings" => open_window(
                         app,
                         "settings",
                         "settings.html",
                         "KeyboardPet 设置",
-                        460.0,
-                        640.0,
+                        470.0,
+                        600.0,
                     ),
+                    "github" => open_url(PROJECT_URL),
                     _ => {}
                 })
                 .build(app)?;
@@ -128,7 +174,14 @@ pub fn run() {
             }
 
             // Start keyboard monitoring + the state ticker, and share the state.
-            let state = runtime::launch(app.handle());
+            let summary = TraySummary {
+                status: i_status,
+                level: i_level,
+                today: i_today,
+                wpm: i_wpm,
+                peak: i_peak,
+            };
+            let state = runtime::launch(app.handle(), summary);
             app.manage(state);
             Ok(())
         })
