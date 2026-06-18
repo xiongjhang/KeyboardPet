@@ -1,212 +1,215 @@
+/* Statistics window — mirrors the Swift StatsPanel. */
 :root {
   --bg: #ffffff;
-  --fg: #1a1a1a;
-  --muted: #6b7280;
-  --card: #f4f4f5;
-  --accent: #ff5e00;
-  --track: #e5e7eb;
-  --cell0: #ebedf0;
-  --cell1: #ffd2b3;
-  --cell2: #ffae73;
-  --cell3: #ff7e33;
-  --cell4: #ff5e00;
+  --fg: #1d1d1f;
+  --muted: #8a8a8e;
+  --green: rgb(46, 184, 102); /* StatsPanel base green (0.18,0.72,0.40) */
+  --green-soft: rgba(52, 199, 89, 0.45);
+  --green-strong: rgba(52, 199, 89, 0.95);
+  --cell-empty: rgba(0, 0, 0, 0.06);
+  --card-bg: rgba(0, 0, 0, 0.05);
+  --border-faint: rgba(0, 0, 0, 0.08);
+  --track: rgba(0, 0, 0, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1c1c1e;
+    --bg: #1e1e1e;
     --fg: #f2f2f7;
-    --muted: #9ca3af;
-    --card: #2c2c2e;
-    --track: #3a3a3c;
-    --cell0: #2c2c2e;
+    --muted: #9a9aa0;
+    --cell-empty: rgba(255, 255, 255, 0.07);
+    --card-bg: rgba(255, 255, 255, 0.06);
+    --border-faint: rgba(255, 255, 255, 0.1);
+    --track: rgba(255, 255, 255, 0.12);
   }
 }
 
 * {
   box-sizing: border-box;
 }
-
 html,
 body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
   font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .panel {
-  padding: 18px 20px 28px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-h2 {
-  font-size: 14px;
-  margin: 22px 0 10px;
+/* Header */
+.hrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.emoji {
+  font-size: 34px;
+  line-height: 1;
+}
+.title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.sub {
+  font-size: 12px;
   color: var(--muted);
-  font-weight: 600;
+  margin-top: 2px;
+}
+.progress {
+  margin-top: 8px;
+  height: 6px;
+  background: var(--track);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: #34c759;
+  transition: width 0.3s ease;
+}
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
 }
 
 /* Summary cards */
 .cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
-
 .card {
-  background: var(--card);
+  background: var(--card-bg);
   border-radius: 10px;
-  padding: 12px 8px;
-  text-align: center;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
 }
-
+.card .ic {
+  font-size: 16px;
+  filter: grayscale(0.1);
+}
 .card .num {
   font-size: 22px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-
 .card .lbl {
   font-size: 11px;
   color: var(--muted);
 }
 
-/* XP bar */
-.xpbar {
-  margin-top: 14px;
-  height: 8px;
-  background: var(--track);
-  border-radius: 4px;
-  overflow: hidden;
+/* Section titles */
+.sec-title {
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.xpfill {
-  height: 100%;
-  width: 0;
-  background: var(--accent);
-  transition: width 0.3s ease;
-}
-
-.xptext {
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* Heatmaps */
-.heat {
-  display: grid;
-  gap: 4px;
-}
-
-.heat.hours {
-  grid-template-columns: repeat(12, 1fr);
-}
-
-.heat.days {
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.cell {
-  aspect-ratio: 1;
-  border-radius: 3px;
-  background: var(--cell0);
-}
-
-.cell.lvl1 {
-  background: var(--cell1);
-}
-.cell.lvl2 {
-  background: var(--cell2);
-}
-.cell.lvl3 {
-  background: var(--cell3);
-}
-.cell.lvl4 {
-  background: var(--cell4);
-}
-
-/* Settings form */
-.row {
+/* Monthly calendar */
+.cal-head,
+.hourly-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--track);
+  margin-bottom: 10px;
 }
-
-.row label {
-  flex: 1;
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-
-.row .hint {
-  display: block;
-  font-size: 11px;
+.cal-nav button {
+  background: none;
+  border: none;
+  color: var(--fg);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.cal-nav button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.cal-nav .month {
+  font-size: 12px;
+  min-width: 84px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
-
-.row input[type="number"] {
-  width: 72px;
-}
-
-input[type="number"],
-select {
-  background: var(--card);
-  color: var(--fg);
-  border: 1px solid var(--track);
-  border-radius: 6px;
-  padding: 5px 7px;
-  font-size: 13px;
-}
-
-.actions {
+.cal-cols {
   display: flex;
-  gap: 10px;
-  margin-top: 18px;
-  flex-wrap: wrap;
+  gap: 4px;
 }
-
-button {
-  border: none;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 600;
+.wk {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.wk.labels {
+  flex: 0 0 16px;
+}
+.wlabel {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--muted);
+}
+.cell {
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
   cursor: pointer;
-  background: var(--card);
-  color: var(--fg);
+  border: 1px solid transparent;
+}
+.cell.empty-slot {
+  background: transparent;
+  cursor: default;
+}
+.cal-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
 }
 
-button.primary {
-  background: var(--accent);
-  color: #fff;
+/* Hourly heatmap */
+.peak {
+  font-size: 11px;
+  color: var(--green);
 }
-
-button.danger {
-  background: #ef4444;
-  color: #fff;
+.hours {
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap: 3px;
 }
-
-.toast {
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 12px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  pointer-events: none;
+.hours .hcell {
+  height: 28px;
+  border-radius: 3px;
+  border: 1px solid var(--border-faint);
 }
-
-.toast.show {
-  opacity: 1;
+.axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
 }
