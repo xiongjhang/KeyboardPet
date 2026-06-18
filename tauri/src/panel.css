@@ -1,0 +1,212 @@
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #6b7280;
+  --card: #f4f4f5;
+  --accent: #ff5e00;
+  --track: #e5e7eb;
+  --cell0: #ebedf0;
+  --cell1: #ffd2b3;
+  --cell2: #ffae73;
+  --cell3: #ff7e33;
+  --cell4: #ff5e00;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1e;
+    --fg: #f2f2f7;
+    --muted: #9ca3af;
+    --card: #2c2c2e;
+    --track: #3a3a3c;
+    --cell0: #2c2c2e;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+}
+
+.panel {
+  padding: 18px 20px 28px;
+}
+
+h2 {
+  font-size: 14px;
+  margin: 22px 0 10px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Summary cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 12px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card .num {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.card .lbl {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* XP bar */
+.xpbar {
+  margin-top: 14px;
+  height: 8px;
+  background: var(--track);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.xpfill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.xptext {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Heatmaps */
+.heat {
+  display: grid;
+  gap: 4px;
+}
+
+.heat.hours {
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.heat.days {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--cell0);
+}
+
+.cell.lvl1 {
+  background: var(--cell1);
+}
+.cell.lvl2 {
+  background: var(--cell2);
+}
+.cell.lvl3 {
+  background: var(--cell3);
+}
+.cell.lvl4 {
+  background: var(--cell4);
+}
+
+/* Settings form */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--track);
+}
+
+.row label {
+  flex: 1;
+}
+
+.row .hint {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.row input[type="number"] {
+  width: 72px;
+}
+
+input[type="number"],
+select {
+  background: var(--card);
+  color: var(--fg);
+  border: 1px solid var(--track);
+  border-radius: 6px;
+  padding: 5px 7px;
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--fg);
+}
+
+button.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+button.danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.toast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+}

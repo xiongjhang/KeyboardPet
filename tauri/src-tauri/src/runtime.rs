@@ -1,38 +1,50 @@
-//! Wires the keyboard hook into the core engines and pushes live updates to the
-//! frontend.
+//! Wires the keyboard hook into the core engines, persists keystroke stats, and
+//! pushes live updates to the frontend.
 //!
-//! Data flow: key press → `MetricsEngine` (+ XP) → a 0.5s ticker recomputes
-//! metrics, runs the `PetStateMachine`, and emits a `pet-update` event that the
-//! pet window renders. This is the cross-platform analogue of the Swift
-//! `PetController`.
+//! Shared state lives in `AppState`, managed by Tauri so commands (stats /
+//! settings windows) can read it too. This is the cross-platform analogue of
+//! the Swift `PetController`.
 
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use chrono::{Local, Utc};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
-use crate::core::{ExperienceManager, MetricsEngine, PetStateMachine, Settings};
+use crate::core::stats_store::{day_string, hour_of};
+use crate::core::{ExperienceManager, MetricsEngine, PetStateMachine, Settings, StatsStore};
 use crate::platform;
 
-/// Owns the live engines; shared between the keyboard thread and the ticker.
-struct PetRuntime {
-    metrics: MetricsEngine,
-    machine: PetStateMachine,
-    xp: ExperienceManager,
-    settings: Settings,
+/// Flush pending keystroke counts to disk every 60s (120 ticks of 500ms),
+/// matching the Swift batching budget.
+const FLUSH_EVERY_TICKS: u32 = 120;
+
+/// Owns the live engines.
+pub struct PetRuntime {
+    pub metrics: MetricsEngine,
+    pub machine: PetStateMachine,
+    pub xp: ExperienceManager,
 }
 
 impl PetRuntime {
-    fn new(settings: Settings) -> Self {
+    fn new(settings: &Settings) -> Self {
         Self {
             metrics: MetricsEngine::new(settings.clone(), 0, 0),
             machine: PetStateMachine::new(settings.clone()),
             xp: ExperienceManager::new(0),
-            settings,
         }
     }
+}
+
+/// Shared application state, managed by Tauri.
+pub struct AppState {
+    pub runtime: Mutex<PetRuntime>,
+    pub stats: Mutex<StatsStore>,
+    pub settings: Mutex<Settings>,
+    /// Unflushed per-(day, hour) keystroke counts awaiting a batched write.
+    pub pending: Mutex<HashMap<(String, u32), i64>>,
 }
 
 /// Snapshot pushed to the pet window on every tick.
@@ -51,10 +63,10 @@ struct PetUpdate {
     xp_to_next: i64,
 }
 
-/// Start keyboard monitoring and the state ticker. Call once from `setup`.
-pub fn launch(app: &AppHandle) {
-    // macOS: the listener needs Accessibility permission. This prompts on first
-    // run and registers the app under System Settings ▸ Privacy & Security.
+/// Start keyboard monitoring, stats persistence, and the state ticker. Call
+/// once from `setup`. Returns the managed state so the caller can register it.
+pub fn launch(app: &AppHandle) -> Arc<AppState> {
+    // macOS: the listener needs Accessibility permission (prompts on first run).
     #[cfg(target_os = "macos")]
     {
         let trusted =
@@ -67,50 +79,103 @@ pub fn launch(app: &AppHandle) {
         }
     }
 
-    let runtime = Arc::new(Mutex::new(PetRuntime::new(Settings::default())));
+    let settings = Settings::default();
+    let stats_path = app
+        .path()
+        .app_data_dir()
+        .ok()
+        .map(|dir| dir.join("stats.json"));
 
-    // Keyboard → metrics + XP. A broken record arms the celebratory state.
-    let kb_rt = runtime.clone();
+    let state = Arc::new(AppState {
+        runtime: Mutex::new(PetRuntime::new(&settings)),
+        stats: Mutex::new(StatsStore::load(stats_path)),
+        settings: Mutex::new(settings),
+        pending: Mutex::new(HashMap::new()),
+    });
+
+    // Keyboard → metrics + XP, and record the bucket for batched persistence.
+    let kb_state = state.clone();
     platform::keyboard::start_listener(move |event| {
         let now = event.timestamp;
-        let mut rt = kb_rt.lock().unwrap();
-        let broke_record = rt.metrics.ingest(event);
-        rt.xp.award(1);
-        if broke_record.is_some() {
-            rt.machine.trigger_record(now);
+        {
+            let mut rt = kb_state.runtime.lock().unwrap();
+            let broke_record = rt.metrics.ingest(event);
+            rt.xp.award(1);
+            if broke_record.is_some() {
+                rt.machine.trigger_record(now);
+            }
+        }
+        let local = now.with_timezone(&Local);
+        let mut pending = kb_state.pending.lock().unwrap();
+        *pending.entry((day_string(local), hour_of(local))).or_insert(0) += 1;
+    });
+
+    // 0.5s ticker → live settings, recompute, evaluate, persist, emit.
+    let tick_state = state.clone();
+    let handle = app.clone();
+    std::thread::spawn(move || {
+        let mut ticks: u32 = 0;
+        let mut last_day = day_string(Local::now());
+
+        loop {
+            std::thread::sleep(Duration::from_millis(500));
+            ticks = ticks.wrapping_add(1);
+            let now = Utc::now();
+            let today = day_string(Local::now());
+
+            let update = {
+                let settings = tick_state.settings.lock().unwrap().clone();
+                let mut rt = tick_state.runtime.lock().unwrap();
+
+                // Apply any live settings edits to the engines.
+                rt.metrics.set_settings(settings.clone());
+                rt.machine.set_settings(settings.clone());
+
+                // Day rollover resets the today-counter.
+                if today != last_day {
+                    rt.metrics.reset_daily();
+                    last_day = today.clone();
+                }
+
+                if rt.metrics.tick(now).is_some() {
+                    rt.machine.trigger_record(now);
+                }
+                let m = rt.metrics.metrics.clone();
+                let state = rt.machine.evaluate(&m, now);
+                let is_night = PetStateMachine::is_night(Local::now(), &settings);
+                PetUpdate {
+                    state: state.as_str().to_string(),
+                    display_name: state.display_name().to_string(),
+                    emoji: state.emoji().to_string(),
+                    is_night,
+                    wpm: m.wpm,
+                    peak_wpm: m.peak_wpm,
+                    today_keystrokes: m.today_keystrokes,
+                    delete_rate: m.delete_rate,
+                    level: rt.xp.level(),
+                    level_progress: rt.xp.level_progress(),
+                    xp_to_next: rt.xp.xp_to_next_level(),
+                }
+            };
+
+            // Batched flush of keystroke buckets to disk.
+            if ticks % FLUSH_EVERY_TICKS == 0 {
+                let drained: Vec<((String, u32), i64)> = {
+                    let mut pending = tick_state.pending.lock().unwrap();
+                    pending.drain().collect()
+                };
+                if !drained.is_empty() {
+                    let mut stats = tick_state.stats.lock().unwrap();
+                    for ((day, hour), count) in drained {
+                        stats.add(count, &day, hour);
+                    }
+                    stats.save();
+                }
+            }
+
+            let _ = handle.emit("pet-update", update);
         }
     });
 
-    // 0.5s ticker → recompute, evaluate state, emit to the frontend.
-    let tick_rt = runtime.clone();
-    let handle = app.clone();
-    std::thread::spawn(move || loop {
-        std::thread::sleep(Duration::from_millis(500));
-        let now = Utc::now();
-
-        let update = {
-            let mut rt = tick_rt.lock().unwrap();
-            if rt.metrics.tick(now).is_some() {
-                rt.machine.trigger_record(now);
-            }
-            let m = rt.metrics.metrics.clone();
-            let state = rt.machine.evaluate(&m, now);
-            let is_night = PetStateMachine::is_night(Local::now(), &rt.settings);
-            PetUpdate {
-                state: state.as_str().to_string(),
-                display_name: state.display_name().to_string(),
-                emoji: state.emoji().to_string(),
-                is_night,
-                wpm: m.wpm,
-                peak_wpm: m.peak_wpm,
-                today_keystrokes: m.today_keystrokes,
-                delete_rate: m.delete_rate,
-                level: rt.xp.level(),
-                level_progress: rt.xp.level_progress(),
-                xp_to_next: rt.xp.xp_to_next_level(),
-            }
-        };
-
-        let _ = handle.emit("pet-update", update);
-    });
+    state
 }

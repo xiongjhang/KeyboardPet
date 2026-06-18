@@ -10,9 +10,11 @@ pub mod key_event;
 pub mod metrics;
 pub mod settings;
 pub mod state_machine;
+pub mod stats_store;
 
 pub use experience::ExperienceManager;
 pub use key_event::KeyEvent;
 pub use metrics::{Metrics, MetricsEngine};
 pub use settings::Settings;
 pub use state_machine::{PetState, PetStateMachine};
+pub use stats_store::StatsStore;

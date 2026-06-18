@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="panel.css" />
+    <title>KeyboardPet 统计</title>
+    <script type="module" src="/stats.js" defer></script>
+  </head>
+  <body>
+    <div class="panel">
+      <section class="cards">
+        <div class="card"><span class="num" id="level">–</span><span class="lbl">等级</span></div>
+        <div class="card"><span class="num" id="today">–</span><span class="lbl">今日按键</span></div>
+        <div class="card"><span class="num" id="wpm">–</span><span class="lbl">当前 WPM</span></div>
+        <div class="card"><span class="num" id="peak">–</span><span class="lbl">峰值 WPM</span></div>
+      </section>
+
+      <div class="xpbar"><div class="xpfill" id="xpfill"></div></div>
+      <p class="xptext" id="xptext"></p>
+
+      <h2>今日活跃（按小时）</h2>
+      <div class="heat hours" id="hours"></div>
+
+      <h2 id="month-title">本月活跃</h2>
+      <div class="heat days" id="days"></div>
+    </div>
+  </body>
+</html>
