@@ -13,9 +13,13 @@ celebrating new records, and more.
 [English](README.md) · [简体中文](README.zh-CN.md)
 
 ![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-black?logo=apple)
+![Cross-platform](https://img.shields.io/badge/cross--platform-Windows%20%C2%B7%20macOS-blue?logo=tauri)
 ![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange?logo=swift)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Privacy](https://img.shields.io/badge/privacy-100%25%20local-brightgreen)
+
+> 🪟 **Want it on Windows?** A cross-platform (Windows + macOS) rewrite lives in
+> [`tauri/`](tauri/) — see [Cross-platform build](#-cross-platform-windows--macos) below.
 
 </div>
 
@@ -70,7 +74,20 @@ overlay is baked into the sprites (a sleepier, night-mode look).
 
 <sub>Regenerate these with <code>./Tools/render_state_gifs.sh</code> after changing the sprites or effects.</sub>
 
-## 📦 Requirements
+## 🧩 Two implementations
+
+KeyboardPet comes in two flavors that share the same pixel-art crab, state
+machine, and privacy design:
+
+| | Platform | Stack | Where |
+|---|---|---|---|
+| **Native** (this README) | macOS 14+ | Swift · SwiftUI · AppKit | repo root |
+| **Cross-platform** | **Windows + macOS** | Tauri · Rust · HTML/JS | [`tauri/`](tauri/) |
+
+The native macOS app is the reference; the cross-platform port mirrors its
+behavior 1:1 (see [docs/cross-platform-plan.md](docs/cross-platform-plan.md)).
+
+## 📦 Requirements (native macOS app)
 
 - macOS 14 (Sonoma) or later
 - Swift 5.9+ toolchain (Xcode 15+ / command-line tools)
@@ -120,11 +137,42 @@ open KeyboardPet.app
   size, tune the state-machine thresholds, and **export** or **erase** your
   data.
 
+## 🪟 Cross-platform (Windows + macOS)
+
+The [`tauri/`](tauri/) directory holds a Tauri (Rust + HTML/JS) rewrite that runs
+on **Windows and macOS** from one codebase. It re-implements the full experience:
+the same nine-state crab, night skin, live WPM readout, record celebration,
+stats heatmaps, settings, persistence, and launch-at-login.
+
+```bash
+cd tauri
+npm install
+npm run tauri dev      # run locally (macOS or Windows)
+npm run tauri build    # build installers → src-tauri/target/release/bundle/
+```
+
+- **Keyboard hook**: uses a low-level hook per OS (`WH_KEYBOARD_LL` on Windows,
+  `CGEventTap` on macOS). Windows needs **no** permission; macOS prompts for
+  Accessibility on first launch.
+- **Test on Windows without a local toolchain**: the
+  [Build (Tauri cross-platform)](.github/workflows/tauri-build.yml) GitHub Action
+  builds on macOS *and* Windows and uploads the installers as artifacts — grab
+  the `keyboardpet-windows-latest` one (NSIS `.exe` / MSI).
+- Full build/test/architecture notes: [tauri/README.md](tauri/README.md).
+
+> Status: feature-complete and building on both platforms; in active testing.
+> Known follow-up: the `pet_scale` setting is stored but not yet applied to the
+> window size.
+
 ## 🔒 Privacy
 
 KeyboardPet records **only** physical key codes and timestamps, used purely to
 compute aggregate metrics (WPM, delete rate, idle time). It never records typed
 characters, window titles, or app names, and it never connects to the network.
+
+The cross-platform build keeps the same promise — its keyboard hook derives only
+whether each press was a delete key, plus a timestamp; it never reads the
+produced character.
 
 You can inspect exactly what's stored at any time via **Settings ▸ Data ▸
 Export** (a JSON file of aggregate counts only), or wipe everything with

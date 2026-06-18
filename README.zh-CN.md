@@ -12,9 +12,13 @@
 [English](README.md) · [简体中文](README.zh-CN.md)
 
 ![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-black?logo=apple)
+![Cross-platform](https://img.shields.io/badge/cross--platform-Windows%20%C2%B7%20macOS-blue?logo=tauri)
 ![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange?logo=swift)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Privacy](https://img.shields.io/badge/privacy-100%25%20local-brightgreen)
+
+> 🪟 **想在 Windows 上用？** 跨平台（Windows + macOS）重写版位于
+> [`tauri/`](tauri/)，详见下方[跨平台构建](#-跨平台windows--macos)。
 
 </div>
 
@@ -63,7 +67,19 @@
 
 <sub>修改精灵图或特效后，运行 <code>./Tools/render_state_gifs.sh</code> 即可重新生成这些动图。</sub>
 
-## 📦 环境要求
+## 🧩 两种实现
+
+KeyboardPet 提供两个版本，共用同一套像素螃蟹、状态机与隐私设计：
+
+| | 平台 | 技术栈 | 位置 |
+|---|---|---|---|
+| **原生版**（本 README） | macOS 14+ | Swift · SwiftUI · AppKit | 仓库根目录 |
+| **跨平台版** | **Windows + macOS** | Tauri · Rust · HTML/JS | [`tauri/`](tauri/) |
+
+原生 macOS 版为基准实现；跨平台版 1:1 还原其行为（见
+[docs/cross-platform-plan.md](docs/cross-platform-plan.md)）。
+
+## 📦 环境要求（原生 macOS 版）
 
 - macOS 14（Sonoma）或更高版本
 - Swift 5.9+ 工具链（Xcode 15+ / 命令行工具）
@@ -107,10 +123,37 @@ open KeyboardPet.app
 - 在**设置**中可开启**登录时启动**、调整桌面螃蟹大小、微调状态机阈值，并**导出**或
   **清除**你的数据。
 
+## 🪟 跨平台（Windows + macOS）
+
+[`tauri/`](tauri/) 目录是一份 Tauri（Rust + HTML/JS）重写版，**一套代码同时跑在
+Windows 与 macOS**，完整复刻整体体验：同样的 9 状态螃蟹、夜间皮肤、实时 WPM 读数、
+破纪录庆祝、统计热力图、设置、持久化与开机自启。
+
+```bash
+cd tauri
+npm install
+npm run tauri dev      # 本地运行（macOS 或 Windows）
+npm run tauri build    # 构建安装包 → src-tauri/target/release/bundle/
+```
+
+- **键盘监听**：按平台使用底层钩子（Windows `WH_KEYBOARD_LL`、macOS `CGEventTap`）。
+  Windows **无需授权**；macOS 首次启动会请求辅助功能权限。
+- **不想配本地工具链也能在 Windows 上测**：
+  [Build (Tauri cross-platform)](.github/workflows/tauri-build.yml) 这个 GitHub Action
+  会在 macOS 与 Windows 上同时构建并上传安装包工件——下载
+  `keyboardpet-windows-latest`（NSIS `.exe` / MSI）即可安装。
+- 完整的构建 / 测试 / 架构说明见 [tauri/README.md](tauri/README.md)。
+
+> 状态：功能已完整、两平台均能构建，正在实测中。已知收尾项：`pet_scale`（缩放）
+> 设置已存储，但尚未应用到窗口尺寸。
+
 ## 🔒 隐私说明
 
 KeyboardPet **只**记录物理键位码与时间戳，仅用于计算聚合指标（WPM、删除率、空闲时长）。
 它绝不记录你输入的字符、窗口标题或应用名，也从不联网。
+
+跨平台版同样遵守这一承诺——其键盘钩子只判断每次按键是否为删除键，外加一个时间戳，
+绝不读取产生的字符。
 
 你随时可以通过**设置 ▸ 数据 ▸ 导出**查看具体存了哪些内容（仅聚合计数的 JSON 文件），
 或用**清除所有数据**一键抹除。
