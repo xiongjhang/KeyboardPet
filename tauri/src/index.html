@@ -11,6 +11,8 @@
   <body>
     <!-- The whole pet is a drag region so you can move it anywhere. -->
     <main id="pet" data-tauri-drag-region>
+      <!-- Live WPM readout, shown above the crab while typing. -->
+      <div id="wpm" class="hidden"><span id="wpm-value">0</span> WPM</div>
       <img id="sprite" alt="pet" draggable="false" />
     </main>
   </body>
