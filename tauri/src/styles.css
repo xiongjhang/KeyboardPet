@@ -1,0 +1,43 @@
+:root {
+  /* Logical size of the on-screen crab; the window is 220x220. */
+  --pet-size: 200px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  /* Fully transparent window — only the sprite is visible. */
+  background: transparent;
+  overflow: hidden;
+  /* No text selection / callouts while dragging the pet. */
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+#pet {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#pet:active {
+  cursor: grabbing;
+}
+
+#sprite {
+  width: var(--pet-size);
+  height: var(--pet-size);
+  /* Keep pixel art crisp when scaled up (nearest-neighbor). */
+  image-rendering: pixelated;
+  -webkit-user-drag: none;
+}
