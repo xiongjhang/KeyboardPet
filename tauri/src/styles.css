@@ -1,8 +1,3 @@
-:root {
-  /* Logical size of the on-screen crab; the window is 220x220. */
-  --pet-size: 200px;
-}
-
 * {
   margin: 0;
   padding: 0;
@@ -13,75 +8,20 @@ html,
 body {
   width: 100%;
   height: 100%;
-  /* Fully transparent window — only the sprite is visible. */
+  /* Fully transparent window — only the painted crab is visible. */
   background: transparent;
   overflow: hidden;
-  /* No text selection / callouts while dragging the pet. */
   user-select: none;
   -webkit-user-select: none;
   cursor: grab;
-  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
 }
 
-#pet {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#pet:active {
+body:active {
   cursor: grabbing;
 }
 
-#sprite {
-  width: var(--pet-size);
-  height: var(--pet-size);
-  /* Keep pixel art crisp when scaled up (nearest-neighbor). */
-  image-rendering: pixelated;
-  -webkit-user-drag: none;
-}
-
-/* Live WPM readout floating above the crab. */
-#wpm {
-  position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-#wpm.hidden {
-  opacity: 0;
-}
-
-/* Flow: tint the readout to signal a sustained high-WPM streak. */
-#wpm.flow {
-  background: rgba(255, 94, 0, 0.8);
-}
-
-/* A celebratory bounce while the pet is breaking a record. */
-#pet.celebrate #sprite {
-  animation: celebrate 0.5s ease-in-out infinite;
-}
-
-@keyframes celebrate {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-10px) scale(1.05);
-  }
+#pet {
+  display: block;
+  width: 200px;
+  height: 200px;
 }
