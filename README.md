@@ -77,21 +77,14 @@ overlay is baked into the sprites (a sleepier, night-mode look).
 
 ## 🚀 Quick Start
 
-The app must run from a `.app` bundle so macOS can grant it Accessibility
-permission (required for global keyboard monitoring).
+KeyboardPet is distributed as **source only** — there is no pre-built download.
+It's a small, unsigned hobby app, and an un-notarized binary would just trip
+Gatekeeper ("app is damaged") on every machine. Building locally produces a
+working, un-quarantined `.app` in one command.
 
-### Download (recommended)
-
-Grab the latest `KeyboardPet-x.y.z.dmg` from the
-[Releases](https://github.com/xiongjhang/KeyboardPet/releases) page, open it,
-and drag **KeyboardPet** into **Applications**.
-
-> The release build is ad-hoc signed but **not notarized**, so on first launch
-> macOS may say it's from an unidentified developer. Right-click the app and
-> choose **Open**, or run
-> `xattr -dr com.apple.quarantine /Applications/KeyboardPet.app`.
-
-### Build from source
+> The app must run from a `.app` bundle so macOS can grant it Accessibility
+> permission (required for global keyboard monitoring). You'll need a Swift
+> 5.9+ toolchain (Xcode 15+).
 
 ```bash
 git clone https://github.com/xiongjhang/KeyboardPet.git
@@ -100,12 +93,9 @@ cd KeyboardPet
 # Build the .app bundle and launch it
 ./build_app.sh --run
 
-# …or build only
+# …or build only, then move KeyboardPet.app into /Applications via Finder
 ./build_app.sh
 open KeyboardPet.app
-
-# …or build a distributable .dmg
-./package_dmg.sh
 ```
 
 ### First launch: grant Accessibility permission
@@ -143,10 +133,16 @@ Export** (a JSON file of aggregate counts only), or wipe everything with
 ## 🔄 Updating
 
 KeyboardPet has **no built-in update checker** — that's deliberate, so the app
-keeps its promise of zero network access. To update, download the newer `.dmg`
-from [Releases](https://github.com/xiongjhang/KeyboardPet/releases) and replace
-the app in Applications. Your stats and settings (stored locally) carry over.
-Watch / star the repo to be notified of new releases.
+keeps its promise of zero network access. To update, pull the latest source and
+rebuild:
+
+```bash
+git pull
+./build_app.sh --run
+```
+
+Your stats and settings (stored locally) carry over. Watch / star the repo to
+be notified of new versions.
 
 ## 🛠️ Development
 

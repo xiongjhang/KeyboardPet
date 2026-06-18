@@ -16,11 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - App icon (`AppIcon.icns`) generated from the pixel-art crab.
 - Unit tests covering the experience curve, the state machine, the metrics
   engine and the stats date helpers.
-- Continuous integration (GitHub Actions): build + test on every push/PR, and a
-  tag-triggered release workflow that builds the `.app`, packages a `.dmg` and
-  attaches it to the GitHub Release.
-- `package_dmg.sh` to produce a distributable disk image.
+- Continuous integration (GitHub Actions): build + test on every push/PR.
 - Community docs: `CHANGELOG.md`, `CONTRIBUTING.md`, and issue / PR templates.
+
+### Changed
+- Distribution is **source-only**: building locally is the supported install
+  path. Without Apple notarization a downloaded binary would trip Gatekeeper
+  on every machine, so no pre-built `.dmg` is published.
+
+### Removed
+- The tag-triggered DMG release workflow and `package_dmg.sh`.
 
 ## [0.1.0] - 2026-06-17
 

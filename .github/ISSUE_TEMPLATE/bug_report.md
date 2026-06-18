@@ -22,7 +22,7 @@ If applicable, add a screenshot or short clip of the pet's behavior.
 **Environment**
 - macOS version: [e.g. 14.5]
 - KeyboardPet version: [see the menu bar ▸ About]
-- Installed from: [source build / .dmg release]
+- Built from: [commit SHA or tag]
 
 **Additional context**
 Anything else that might help — e.g. whether Accessibility permission is
