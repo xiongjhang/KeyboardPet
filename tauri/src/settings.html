@@ -3,53 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="panel.css" />
+    <link rel="stylesheet" href="settings.css" />
     <title>KeyboardPet 设置</title>
     <script type="module" src="/settings.js" defer></script>
   </head>
   <body>
-    <div class="panel">
-      <h2>通用</h2>
-      <div class="row"><label>开机自启</label><input type="checkbox" id="autostart" /></div>
-
-      <h2>外观</h2>
-      <div class="row">
-        <label>宠物缩放<span class="hint">1.0 为基准大小（重启后生效）</span></label>
-        <input type="number" id="pet_scale" min="0.5" max="2" step="0.1" />
-      </div>
-
-      <h2>空闲递进（秒）</h2>
-      <div class="row"><label>思考</label><input type="number" id="thinking_after" min="1" /></div>
-      <div class="row"><label>犯困</label><input type="number" id="sleepy_after" min="1" /></div>
-      <div class="row"><label>睡着</label><input type="number" id="sleeping_after" min="1" /></div>
-
-      <h2>心流</h2>
-      <div class="row"><label>启用</label><input type="checkbox" id="flow_enabled" /></div>
-      <div class="row"><label>WPM 阈值</label><input type="number" id="flow_threshold" min="1" /></div>
-      <div class="row"><label>持续秒数</label><input type="number" id="flow_sustain" min="1" /></div>
-
-      <h2>纠结（删除）</h2>
-      <div class="row"><label>启用</label><input type="checkbox" id="deleting_enabled" /></div>
-      <div class="row"><label>删除率阈值<span class="hint">0–1</span></label><input type="number" id="delete_rate_threshold" min="0" max="1" step="0.05" /></div>
-
-      <h2>夜间</h2>
-      <div class="row"><label>启用</label><input type="checkbox" id="night_enabled" /></div>
-      <div class="row"><label>开始小时<span class="hint">0–23</span></label><input type="number" id="night_start_hour" min="0" max="23" /></div>
-      <div class="row"><label>结束小时<span class="hint">0–23</span></label><input type="number" id="night_end_hour" min="0" max="23" /></div>
-
-      <h2>高级</h2>
-      <div class="row"><label>活跃判定（秒）</label><input type="number" id="active_threshold" min="0" step="0.5" /></div>
-      <div class="row"><label>WPM 窗口（秒）</label><input type="number" id="wpm_window" min="1" /></div>
-      <div class="row"><label>删除窗口（秒）</label><input type="number" id="delete_window" min="1" /></div>
-      <div class="row"><label>破纪录时长（秒）</label><input type="number" id="record_duration" min="1" /></div>
-      <div class="row"><label>惊醒时长（秒）</label><input type="number" id="wakeup_duration" min="1" /></div>
-
-      <div class="actions">
-        <button id="reset">恢复默认</button>
-        <button id="export" class="primary">导出数据（复制）</button>
-        <button id="erase" class="danger">清除全部数据</button>
-      </div>
-    </div>
+    <div class="form" id="form"></div>
     <div class="toast" id="toast"></div>
   </body>
 </html>
