@@ -1,3 +1,5 @@
+pub mod core;
+
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
