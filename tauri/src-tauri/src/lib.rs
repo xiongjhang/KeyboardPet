@@ -1,4 +1,6 @@
 pub mod core;
+pub mod platform;
+pub mod runtime;
 
 use tauri::{
     menu::{Menu, MenuItem},
@@ -53,6 +55,9 @@ pub fn run() {
             if let Some(pet) = app.get_webview_window("pet") {
                 place_bottom_right(&pet);
             }
+
+            // Start keyboard monitoring + the state ticker.
+            runtime::launch(app.handle());
             Ok(())
         })
         .run(tauri::generate_context!())
