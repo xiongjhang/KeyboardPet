@@ -84,6 +84,24 @@ pub fn get_settings(state: State<'_, Arc<AppState>>) -> Settings {
 pub fn update_settings(state: State<'_, Arc<AppState>>, settings: Settings) {
     *state.settings.lock().unwrap() = settings;
     // Engines pick up the new settings on the next tick (set_settings).
+    state.save_settings_now();
+}
+
+#[tauri::command]
+pub fn get_autostart(app: tauri::AppHandle) -> bool {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().is_enabled().unwrap_or(false)
+}
+
+#[tauri::command]
+pub fn set_autostart(app: tauri::AppHandle, enabled: bool) {
+    use tauri_plugin_autostart::ManagerExt;
+    let manager = app.autolaunch();
+    let _ = if enabled {
+        manager.enable()
+    } else {
+        manager.disable()
+    };
 }
 
 /// Export every aggregate count as a JSON string (no characters — privacy).
@@ -116,7 +134,10 @@ pub fn export_data(state: State<'_, Arc<AppState>>) -> String {
 pub fn erase_all(state: State<'_, Arc<AppState>>) {
     state.pending.lock().unwrap().clear();
     state.stats.lock().unwrap().erase_all();
-    let mut rt = state.runtime.lock().unwrap();
-    rt.xp.reset();
-    rt.metrics.reset_all_counters();
+    {
+        let mut rt = state.runtime.lock().unwrap();
+        rt.xp.reset();
+        rt.metrics.reset_all_counters();
+    }
+    state.save_profile_now();
 }

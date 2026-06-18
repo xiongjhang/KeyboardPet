@@ -1,11 +1,12 @@
-//! Wires the keyboard hook into the core engines, persists keystroke stats, and
-//! pushes live updates to the frontend.
+//! Wires the keyboard hook into the core engines, persists state, and pushes
+//! live updates to the frontend.
 //!
 //! Shared state lives in `AppState`, managed by Tauri so commands (stats /
 //! settings windows) can read it too. This is the cross-platform analogue of
 //! the Swift `PetController`.
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -15,10 +16,11 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::core::stats_store::{day_string, hour_of};
 use crate::core::{ExperienceManager, MetricsEngine, PetStateMachine, Settings, StatsStore};
+use crate::persist::{self, Profile};
 use crate::platform;
 
-/// Flush pending keystroke counts to disk every 60s (120 ticks of 500ms),
-/// matching the Swift batching budget.
+/// Flush pending keystroke counts + profile to disk every 60s (120 ticks of
+/// 500ms), matching the Swift batching budget.
 const FLUSH_EVERY_TICKS: u32 = 120;
 
 /// Owns the live engines.
@@ -29,11 +31,11 @@ pub struct PetRuntime {
 }
 
 impl PetRuntime {
-    fn new(settings: &Settings) -> Self {
+    fn with_seed(settings: &Settings, total_xp: i64, peak_wpm: i64, today: i64) -> Self {
         Self {
-            metrics: MetricsEngine::new(settings.clone(), 0, 0),
+            metrics: MetricsEngine::new(settings.clone(), peak_wpm, today),
             machine: PetStateMachine::new(settings.clone()),
-            xp: ExperienceManager::new(0),
+            xp: ExperienceManager::new(total_xp),
         }
     }
 }
@@ -45,6 +47,32 @@ pub struct AppState {
     pub settings: Mutex<Settings>,
     /// Unflushed per-(day, hour) keystroke counts awaiting a batched write.
     pub pending: Mutex<HashMap<(String, u32), i64>>,
+    pub settings_path: Option<PathBuf>,
+    pub profile_path: Option<PathBuf>,
+}
+
+impl AppState {
+    /// Persist the current settings to disk.
+    pub fn save_settings_now(&self) {
+        if let Some(path) = &self.settings_path {
+            persist::save_settings(path, &self.settings.lock().unwrap());
+        }
+    }
+
+    /// Persist the player profile (XP / peak / today's count) to disk.
+    pub fn save_profile_now(&self) {
+        if let Some(path) = &self.profile_path {
+            let rt = self.runtime.lock().unwrap();
+            let m = &rt.metrics.metrics;
+            let profile = Profile {
+                total_xp: rt.xp.total_xp(),
+                peak_wpm: m.peak_wpm,
+                today_keystrokes: m.today_keystrokes,
+                today_date: day_string(Local::now()),
+            };
+            persist::save_profile(path, &profile);
+        }
+    }
 }
 
 /// Snapshot pushed to the pet window on every tick.
@@ -63,8 +91,8 @@ struct PetUpdate {
     xp_to_next: i64,
 }
 
-/// Start keyboard monitoring, stats persistence, and the state ticker. Call
-/// once from `setup`. Returns the managed state so the caller can register it.
+/// Start keyboard monitoring, persistence, and the state ticker. Call once from
+/// `setup`. Returns the managed state so the caller can register it.
 pub fn launch(app: &AppHandle) -> Arc<AppState> {
     // macOS: the listener needs Accessibility permission (prompts on first run).
     #[cfg(target_os = "macos")]
@@ -79,18 +107,40 @@ pub fn launch(app: &AppHandle) -> Arc<AppState> {
         }
     }
 
-    let settings = Settings::default();
-    let stats_path = app
-        .path()
-        .app_data_dir()
-        .ok()
-        .map(|dir| dir.join("stats.json"));
+    let data_dir = app.path().app_data_dir().ok();
+    let settings_path = data_dir.as_ref().map(|d| d.join("settings.json"));
+    let profile_path = data_dir.as_ref().map(|d| d.join("profile.json"));
+    let stats_path = data_dir.as_ref().map(|d| d.join("stats.json"));
+
+    let settings = settings_path
+        .as_ref()
+        .map(persist::load_settings)
+        .unwrap_or_default();
+    let profile = profile_path
+        .as_ref()
+        .map(persist::load_profile)
+        .unwrap_or_default();
+
+    // Restore today's counter only if it belongs to the current day.
+    let today = day_string(Local::now());
+    let seeded_today = if profile.today_date == today {
+        profile.today_keystrokes
+    } else {
+        0
+    };
 
     let state = Arc::new(AppState {
-        runtime: Mutex::new(PetRuntime::new(&settings)),
+        runtime: Mutex::new(PetRuntime::with_seed(
+            &settings,
+            profile.total_xp,
+            profile.peak_wpm,
+            seeded_today,
+        )),
         stats: Mutex::new(StatsStore::load(stats_path)),
         settings: Mutex::new(settings),
         pending: Mutex::new(HashMap::new()),
+        settings_path,
+        profile_path,
     });
 
     // Keyboard → metrics + XP, and record the bucket for batched persistence.
@@ -158,7 +208,7 @@ pub fn launch(app: &AppHandle) -> Arc<AppState> {
                 }
             };
 
-            // Batched flush of keystroke buckets to disk.
+            // Batched flush of keystroke buckets + profile to disk.
             if ticks % FLUSH_EVERY_TICKS == 0 {
                 let drained: Vec<((String, u32), i64)> = {
                     let mut pending = tick_state.pending.lock().unwrap();
@@ -171,6 +221,7 @@ pub fn launch(app: &AppHandle) -> Arc<AppState> {
                     }
                     stats.save();
                 }
+                tick_state.save_profile_now();
             }
 
             let _ = handle.emit("pet-update", update);

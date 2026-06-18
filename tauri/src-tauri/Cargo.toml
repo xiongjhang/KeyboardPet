@@ -24,6 +24,10 @@ chrono = { version = "0.4", features = ["clock"] }
 # macOS — internally. We only ever read the key variant (for delete detection),
 # never the produced character, preserving the privacy invariant.
 rdev = "0.5"
+# Remember the pet window position across launches.
+tauri-plugin-window-state = "2"
+# Launch at login (registry Run key on Windows, LaunchAgent on macOS).
+tauri-plugin-autostart = "2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # Prompts for / checks the macOS Accessibility permission the listener needs.

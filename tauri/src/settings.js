@@ -71,6 +71,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (el) el.addEventListener("change", save);
   }
 
+  // Launch-at-login is an OS toggle, separate from the engine settings.
+  const autostartEl = document.getElementById("autostart");
+  autostartEl.checked = await invoke("get_autostart");
+  autostartEl.addEventListener("change", async () => {
+    await invoke("set_autostart", { enabled: autostartEl.checked });
+    toast(autostartEl.checked ? "已开启开机自启" : "已关闭开机自启");
+  });
+
   document.getElementById("reset").addEventListener("click", async () => {
     populate(DEFAULTS);
     await save();
