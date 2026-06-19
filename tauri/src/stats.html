@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="panel.css" />
+    <title>KeyboardPet 统计</title>
+    <script type="module" src="/stats.js" defer></script>
+  </head>
+  <body>
+    <div class="panel">
+      <!-- Header: emoji + level/state + XP progress -->
+      <div class="header">
+        <div class="hrow">
+          <span class="emoji" id="emoji">😊</span>
+          <div>
+            <div class="title">KeyboardPet</div>
+            <div class="sub" id="levelState">Lv.1 · 发呆</div>
+          </div>
+        </div>
+        <div class="progress"><div class="progress-fill" id="xpfill"></div></div>
+        <div class="progress-labels">
+          <span>升级进度</span><span id="xptext"></span>
+        </div>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="cards">
+        <div class="card"><span class="ic">⌨️</span><span class="num" id="today">0</span><span class="lbl">今日击键</span></div>
+        <div class="card"><span class="ic">🕐</span><span class="num" id="active">0</span><span class="lbl">活跃小时</span></div>
+        <div class="card"><span class="ic">⚡</span><span class="num" id="peak">0</span><span class="lbl">峰值 WPM</span></div>
+      </div>
+
+      <!-- Monthly calendar heatmap -->
+      <div>
+        <div class="cal-head">
+          <span class="sec-title">活动日历（按日）</span>
+          <span class="cal-nav">
+            <button id="prev">‹</button>
+            <span class="month" id="month"></span>
+            <button id="next">›</button>
+          </span>
+        </div>
+        <div class="cal-cols" id="calGrid"></div>
+        <div class="cal-hint">点击某日查看当天的小时分布</div>
+      </div>
+
+      <!-- Hourly heatmap for the selected day -->
+      <div>
+        <div class="hourly-head">
+          <span class="sec-title" id="hourlyTitle">今日活动分布（按小时）</span>
+          <span class="peak" id="peak-hour"></span>
+        </div>
+        <div class="hours" id="hours"></div>
+        <div class="axis"><span>00:00</span><span>12:00</span><span>23:00</span></div>
+      </div>
+    </div>
+  </body>
+</html>

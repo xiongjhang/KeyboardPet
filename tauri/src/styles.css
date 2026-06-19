@@ -1,0 +1,27 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  /* Fully transparent window — only the painted crab is visible. */
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+body:active {
+  cursor: grabbing;
+}
+
+#pet {
+  display: block;
+  width: 200px;
+  height: 200px;
+}
