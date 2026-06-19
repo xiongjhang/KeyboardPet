@@ -21,6 +21,17 @@ celebrating new records, and more.
 
 ---
 
+## 🎬 Demo
+
+<a href="docs/KeyboardPet-demo.mp4"><img src="docs/demo-poster.png" width="640" alt="Watch the demo"></a>
+
+A ~30-second product tour (1080p, no audio) — **click the poster to play.** Every
+crab state is re-rendered from the real 64×64 sprite art with nearest-neighbor
+scaling, pixel-for-pixel like the app. Rebuild it any time with
+[`./Tools/demo_video/build.sh`](Tools/demo_video).
+
+---
+
 ## ✨ Features
 
 - **Driven by real typing** — A global keyboard monitor (CGEventTap) reads your

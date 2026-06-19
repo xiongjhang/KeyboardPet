@@ -20,6 +20,16 @@
 
 ---
 
+## 🎬 演示视频
+
+<a href="docs/KeyboardPet-demo.mp4"><img src="docs/demo-poster.png" width="640" alt="观看演示视频"></a>
+
+约 30 秒的产品演示（1080p，无声）——**点击封面播放。** 视频里的每个螃蟹状态都从
+真实的 64×64 精灵图以最近邻放大重新渲染，与 app 像素级一致。随时可用
+[`./Tools/demo_video/build.sh`](Tools/demo_video) 重新构建。
+
+---
+
 ## ✨ 功能特性
 
 - **真实键盘驱动** —— 通过全局键盘监听（CGEventTap）读取你的打字节奏，实时切换
